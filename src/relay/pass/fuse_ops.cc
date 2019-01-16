@@ -903,7 +903,7 @@ class FuseMutator : private ExprMutator {
 };
 
 
-Expr FuseOps(const Expr& expr, int fuse_opt_level) {
+Expr FuseOps(const Expr& expr, int fuse_opt_level, const Module& module) {
   // First we convert all chains of fusable ops into
   // abstracted functions which we mark as primtive
   // then we convert these primtive functions into

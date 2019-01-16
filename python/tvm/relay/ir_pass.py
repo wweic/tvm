@@ -703,7 +703,7 @@ def fold_constant(expr):
     return _ir_pass.FoldConstant(expr)
 
 
-def fuse_ops(expr, opt_level=1):
+def fuse_ops(expr, opt_level=1, mod=None):
     """Fuse operators in expr together.
 
     Parameters
@@ -719,7 +719,7 @@ def fuse_ops(expr, opt_level=1):
     transformed_expr : tvm.relay.Expr
         Transformed expression, containing fused result.
     """
-    return _ir_pass.FuseOps(expr, opt_level)
+    return _ir_pass.FuseOps(expr, opt_level, mod)
 
 
 def combine_parallel_conv2d(expr, min_num_branches=3):
