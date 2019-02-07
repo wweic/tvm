@@ -93,6 +93,9 @@ struct ResolvedTypeInfo {
   Array<Type> type_args = Array<Type>(NodePtr<Node>(nullptr));
 };
 
+class TypeInferencer;
+Type ExpandTypeOf(TypeInferencer* infer, const Type& t);
+
 //
 // The inference algorithm can roughly be devided into three stages:
 // - Populate the constraints by visiting the expression (TypeInferencer.GetType)
@@ -102,6 +105,7 @@ struct ResolvedTypeInfo {
 //
 class TypeInferencer : private ExprFunctor<Type(const Expr&)>,
                        private PatternFunctor<void(const Pattern&, const Type&)> {
+ friend struct ExpandTypeOfMutator;
  public:
   // constructors
 
@@ -134,6 +138,10 @@ class TypeInferencer : private ExprFunctor<Type(const Expr&)>,
   // relation function
   TypeRelationFn tuple_getitem_rel_;
   TypeRelationFn make_tuple_rel_;
+
+  inline Type ExpandTypeOf(const Type& t) {
+    return ::tvm::relay::ExpandTypeOf(this, t);
+  }
 
   // Perform unification on two types and report the error at the expression
   // or the span of the expression.
@@ -187,7 +195,7 @@ class TypeInferencer : private ExprFunctor<Type(const Expr&)>,
   // Visitor Logic
   Type VisitExpr_(const VarNode* op) final {
     if (op->type_annotation.defined()) {
-      return op->type_annotation;
+      return ExpandTypeOf(op->type_annotation);
     } else {
       return IncompleteTypeNode::make(Kind::kType);
     }
@@ -832,6 +840,19 @@ Function InferType(const Function& func,
   CHECK(free_tvars.size() == 0)
     << "Found unbound type variables in " << func << ": " << free_tvars;
   return Downcast<Function>(func_ret);
+}
+
+struct ExpandTypeOfMutator : TypeMutator {
+  TypeInferencer* infer;
+  Type VisitType_(const TypeOfNode* type_of) final {
+    return this->infer->GetType(type_of->expr);
+  }
+  ExpandTypeOfMutator(TypeInferencer* infer) : infer(infer) {}
+};
+
+inline Type ExpandTypeOf(TypeInferencer* infer, const Type& t) {
+  auto expand = ExpandTypeOfMutator(infer);
+  return expand.VisitType(t);
 }
 
 TVM_REGISTER_API("relay._ir_pass.infer_type")

@@ -173,6 +173,10 @@ struct KindChecker : TypeFunctor<Kind(const Type&)> {
     return Kind::kTypeData;
   }
 
+  Kind VisitType_(const TypeOfNode* op) override {
+    return kType;
+  }
+
   Kind Check(const Type& t) {
     return this->VisitType(t);
   }
