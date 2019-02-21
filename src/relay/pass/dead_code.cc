@@ -35,6 +35,34 @@
 namespace tvm {
 namespace relay {
 
+bool IsBoolLit(const Expr& e, bool b) {
+  if (const ConstantNode* c = e.as<ConstantNode>()) {
+    if (c->is_scalar()) {
+      auto dt = c->tensor_type()->dtype;
+      if (dt == Bool()) {
+        return *reinterpret_cast<const uint8_t*>(c->data->data) == b;
+      } else if (dt == UInt(8)) {
+        return *reinterpret_cast<const uint8_t*>(c->data->data) == b;
+      } else if (dt == UInt(16)) {
+        return *reinterpret_cast<const uint16_t*>(c->data->data) == b;
+      } else if (dt == UInt(32)) {
+        return *reinterpret_cast<const uint32_t*>(c->data->data) == b;
+      } else if (dt == UInt(64)) {
+        return *reinterpret_cast<const uint64_t*>(c->data->data) == b;
+      } else if (dt == Int(8)) {
+        return *reinterpret_cast<const int8_t*>(c->data->data) == b;
+      } else if (dt == Int(16)) {
+        return *reinterpret_cast<const int16_t*>(c->data->data) == b;
+      } else if (dt == Int(32)) {
+        return *reinterpret_cast<const int32_t*>(c->data->data) == b;
+      } else if (dt == Int(64)) {
+        return *reinterpret_cast<const int64_t*>(c->data->data) == b;
+      }
+    }
+  }
+  return false;
+}
+
 // calculate the dependency graph from expression
 class CalcDep : private ExprVisitor {
  public:
