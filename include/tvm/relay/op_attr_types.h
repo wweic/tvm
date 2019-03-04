@@ -159,6 +159,11 @@ enum AnyCodegenStrategy {
   kVariableDimensions
 };
 
+using Shape = Array<IndexExpr>;
+
+using FShapeFunc =
+  runtime::TypedPackedFunc<Array<Shape>(const Array<Input>& inputs)>;
+
 }  // namespace relay
 }  // namespace tvm
 #endif  // TVM_RELAY_OP_ATTR_TYPES_H_
