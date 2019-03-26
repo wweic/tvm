@@ -50,7 +50,7 @@ struct LambdaLifter : ExprMutator {
 
         // We should not transform primitive functions.
         if (func->IsPrimitive()) {
-          return func;
+          return std::move(func);
         }
 
         auto free_vars = FreeVars(func);
@@ -63,7 +63,7 @@ struct LambdaLifter : ExprMutator {
           auto global = this->module_->GetGlobalVar(name);
           auto vfunc = Downcast<Function>(ExprMutator::VisitExpr_(func_node));
           lifted_.push_back({global, vfunc });
-          return global;
+          return std::move(global);
         }
 
         auto free_type_vars = FreeTypeVars(func, module_);
