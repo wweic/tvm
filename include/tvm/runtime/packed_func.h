@@ -39,6 +39,7 @@
 #include "c_runtime_api.h"
 #include "module.h"
 #include "ndarray.h"
+#include "object.h"
 #include "node_base.h"
 
 namespace HalideIR {
@@ -57,12 +58,6 @@ struct Expr;
 namespace tvm {
 // forward declarations
 class Integer;
-
-namespace relay {
-namespace vm {
-  struct VMObject;
-}
-}
 
 namespace runtime {
 // forward declarations
@@ -607,7 +602,7 @@ class TVMArgValue : public TVMPODValue_ {
   inline operator tvm::Integer() const;
   // get internal node ptr, if it is node
   inline NodePtr<Node>& node_sptr();
-  operator relay::vm::VMObject() const;
+  operator runtime::Object() const;
 };
 
 /*!
@@ -742,7 +737,7 @@ class TVMRetValue : public TVMPODValue_ {
     return *this;
   }
 
-  TVMRetValue& operator=(relay::vm::VMObject other);
+  TVMRetValue& operator=(runtime::Object other);
 
   TVMRetValue& operator=(PackedFunc f) {
     this->SwitchToClass(kFuncHandle, f);
@@ -839,7 +834,7 @@ class TVMRetValue : public TVMPODValue_ {
             kNodeHandle, *other.template ptr<NodePtr<Node> >());
         break;
       }
-      case kVMObject: {
+      case kObject: {
         throw dmlc::Error("here");
       }
       default: {
@@ -889,7 +884,7 @@ class TVMRetValue : public TVMPODValue_ {
         static_cast<NDArray::Container*>(value_.v_handle)->DecRef();
         break;
       }
-      // case kModuleHandle: delete ptr<relay::vm::VMObject>(); break;
+      // case kModuleHandle: delete ptr<runtime::Object>(); break;
     }
     if (type_code_ > kExtBegin) {
 #if TVM_RUNTIME_HEADER_ONLY
@@ -919,7 +914,7 @@ inline const char* TypeCode2Str(int type_code) {
     case kFuncHandle: return "FunctionHandle";
     case kModuleHandle: return "ModuleHandle";
     case kNDArrayContainer: return "NDArrayContainer";
-    case kVMObject: return "VMObject";
+    case kObject: return "Object";
     default: LOG(FATAL) << "unknown type_code="
                         << static_cast<int>(type_code); return "";
   }

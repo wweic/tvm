@@ -27,7 +27,6 @@
 #include <dmlc/thread_local.h>
 #include <tvm/api_registry.h>
 #include <tvm/attrs.h>
-#include <tvm/relay/vm/vm.h>
 #include <vector>
 #include <string>
 #include <exception>
@@ -93,7 +92,7 @@ struct APIAttrGetter : public AttrVisitor {
       found_ref_object = true;
     }
   }
-  void Visit(const char* key, relay::vm::VMObject* value) final {
+  void Visit(const char* key, runtime::Object* value) final {
     if (skey == key) {
       *ret = value[0];
       found_ref_object = true;
@@ -134,7 +133,7 @@ struct APIAttrDir : public AttrVisitor {
   void Visit(const char* key, runtime::NDArray* value) final {
     names->push_back(key);
   }
-  void Visit(const char* key, relay::vm::VMObject* value) final {
+  void Visit(const char* key, runtime::Object* value) final {
     names->push_back(key);
   }
 };

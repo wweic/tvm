@@ -511,7 +511,7 @@ class Prelude:
         self.define_list_foldl()
         self.define_list_foldr()
         self.define_list_foldr1()
-        # self.define_list_concat()
+        self.define_list_concat()
         self.define_list_filter()
         self.define_list_zip()
         self.define_list_rev()
@@ -527,9 +527,10 @@ class Prelude:
         self.define_nat_add()
         self.define_list_length()
         self.define_list_nth()
+        self.define_list_update()
         self.define_list_sum()
-        self.define_tree_adt()
 
+        self.define_tree_adt()
         self.define_tree_map()
         self.define_tree_size()
 
