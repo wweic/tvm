@@ -345,7 +345,9 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
       // Next generate the invoke instruction.
       CHECK(func->IsPrimitive());
       auto target = Target::create("llvm");
-      auto key = CCacheKeyNode::make(func, target);
+      // TODO(haichen): fix input_shapes
+      Array<Shape> input_shapes;
+      auto key = CCacheKeyNode::make(func, input_shapes, target);
       auto cfunc = engine->Lower(key);
       // TODO(jroesch): support lowered funcs for multiple targets
       CHECK_EQ(cfunc->funcs.size(), 1);
