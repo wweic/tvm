@@ -823,7 +823,7 @@ struct ExpandTypeOfMutator : TypeMutator {
   Type VisitType_(const TypeOfNode* type_of) final {
     return this->infer->GetType(type_of->expr);
   }
-  ExpandTypeOfMutator(TypeInferencer* infer) : infer(infer) {}
+  explicit ExpandTypeOfMutator(TypeInferencer* infer) : infer(infer) {}
 };
 
 inline Type ExpandTypeOf(TypeInferencer* infer, const Type& t) {

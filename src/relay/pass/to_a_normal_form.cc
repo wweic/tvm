@@ -317,7 +317,7 @@ Expr ToANormalForm(const Expr& e,
       return ToANormalFormAux(e, m, gv);
     }, e);
 
-  CHECK(FreeVars(ret).size() == 0);
+  CHECK_EQ(FreeVars(ret).size(), 0);
 
   RELAY_LOG(INFO)
     << "ToANF: transformed" << std::endl
