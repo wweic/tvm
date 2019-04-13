@@ -33,12 +33,12 @@ std::ostream& operator<<(std::ostream& os, const ObjectTag& tag) {
 
 Object TensorObj(const NDArray& data) {
   auto ptr = std::make_shared<TensorCell>(data);
-  return std::dynamic_pointer_cast<ObjectCell>(ptr);
+  return Object(std::dynamic_pointer_cast<ObjectCell>(ptr));
 }
 
 Object DatatypeObj(size_t tag, const std::vector<Object>& fields) {
   auto ptr = std::make_shared<DatatypeCell>(tag, fields);
-  return std::dynamic_pointer_cast<ObjectCell>(ptr);
+  return Object(std::dynamic_pointer_cast<ObjectCell>(ptr));
 }
 
 Object TupleObj(const std::vector<Object>& fields) {
@@ -47,7 +47,7 @@ Object TupleObj(const std::vector<Object>& fields) {
 
 Object ClosureObj(size_t func_index, std::vector<Object> free_vars) {
   auto ptr = std::make_shared<ClosureCell>(func_index, free_vars);
-  return std::dynamic_pointer_cast<ObjectCell>(ptr);
+  return Object(std::dynamic_pointer_cast<ObjectCell>(ptr));
 }
 
 NDArray ToNDArray(const Object& obj) {
