@@ -19,7 +19,7 @@ namespace vm {
 
 using namespace tvm::runtime;
 
-using VirtualRegisterNum = size_t;
+using RegName = size_t;
 
 enum struct Opcode {
   Move,
@@ -39,7 +39,7 @@ enum struct Opcode {
 
 struct Instruction {
   struct TensorInfo {
-      VirtualRegisterNum shape_register;
+      RegName shape_register;
       size_t ndim;
       DLDataType dtype;
   };
@@ -47,40 +47,40 @@ struct Instruction {
   Opcode op;
 
   // Destination register that the opcode writes to
-  VirtualRegisterNum dst;
+  RegName dst;
 
   union {
     TensorInfo tensor_info;
 
     // For InvokeClosure
     struct {
-      VirtualRegisterNum closure;
+      RegName closure;
       size_t closure_args_num;
-      VirtualRegisterNum* closure_args;
+      RegName* closure_args;
     };
     // For Ret
     struct {
-      VirtualRegisterNum result;
+      RegName result;
     };
     // For Move
     struct {
-      VirtualRegisterNum from;
+      RegName from;
     };
     struct {
       size_t packed_index;
       size_t arity;
       size_t output_size;
-      VirtualRegisterNum* packed_args;
+      RegName* packed_args;
     };
     // For Select node
     struct {
-      VirtualRegisterNum select_cond;
-      VirtualRegisterNum select_op1;
-      VirtualRegisterNum select_op2;
+      RegName select_cond;
+      RegName select_op1;
+      RegName select_op2;
     };
     // For If node
     struct {
-      VirtualRegisterNum if_cond;
+      RegName if_cond;
       size_t true_offset;
       size_t false_offset;
     };
@@ -88,7 +88,7 @@ struct Instruction {
     struct {
       size_t func_index;
       size_t num_args;
-      VirtualRegisterNum* invoke_args_registers;
+      RegName* invoke_args_registers;
     };
     struct {
       size_t const_index;
@@ -98,20 +98,20 @@ struct Instruction {
     };
     // For GetField
     struct {
-      VirtualRegisterNum object;
+      RegName object;
       size_t field_index;
     };
     // For AllocDatatype
     struct {
       size_t constructor_tag;
       size_t num_fields;
-      VirtualRegisterNum* datatype_fields;
+      RegName* datatype_fields;
     };
     // For AllocClosure
     struct {
       size_t clo_index;
       size_t num_freevar;
-      VirtualRegisterNum* free_vars;
+      RegName* free_vars;
     };
   };
 
@@ -123,19 +123,19 @@ struct Instruction {
 };
 
 // Helpers to build instructions.
-Instruction Select(VirtualRegisterNum cond, VirtualRegisterNum op1, VirtualRegisterNum op2, VirtualRegisterNum dst);
-Instruction Ret(VirtualRegisterNum result);
-Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size, const std::vector<VirtualRegisterNum>& args);
-Instruction AllocTensor(VirtualRegisterNum shape_register, const std::vector<int64_t>& shape, DLDataType dtype, VirtualRegisterNum dst);
-Instruction AllocDatatype(size_t tag, size_t num_fields, const std::vector<VirtualRegisterNum>& fields, VirtualRegisterNum dst);
-Instruction AllocClosure(size_t func_index, size_t num_freevar, const std::vector<VirtualRegisterNum>& free_vars, VirtualRegisterNum dst);
-Instruction GetField(VirtualRegisterNum object, size_t field_index, VirtualRegisterNum dst);
-Instruction If(VirtualRegisterNum cond, size_t true_branch, size_t false_branch);
+Instruction Select(RegName cond, RegName op1, RegName op2, RegName dst);
+Instruction Ret(RegName result);
+Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size, const std::vector<RegName>& args);
+Instruction AllocTensor(RegName shape_register, const std::vector<int64_t>& shape, DLDataType dtype, RegName dst);
+Instruction AllocDatatype(size_t tag, size_t num_fields, const std::vector<RegName>& fields, RegName dst);
+Instruction AllocClosure(size_t func_index, size_t num_freevar, const std::vector<RegName>& free_vars, RegName dst);
+Instruction GetField(RegName object, size_t field_index, RegName dst);
+Instruction If(RegName cond, size_t true_branch, size_t false_branch);
 Instruction Goto(size_t pc_offset);
-Instruction Invoke(size_t func_index, const std::vector<VirtualRegisterNum>& args, VirtualRegisterNum dst);
-Instruction InvokeClosure(VirtualRegisterNum closure, const std::vector<VirtualRegisterNum>& args, VirtualRegisterNum dst);
-Instruction LoadConst(size_t const_index, VirtualRegisterNum dst);
-Instruction Move(VirtualRegisterNum src, VirtualRegisterNum dst);
+Instruction Invoke(size_t func_index, const std::vector<RegName>& args, RegName dst);
+Instruction InvokeClosure(RegName closure, const std::vector<RegName>& args, RegName dst);
+Instruction LoadConst(size_t const_index, RegName dst);
+Instruction Move(RegName src, RegName dst);
 
 struct VMFunction {
   std::string name;
@@ -167,7 +167,7 @@ struct VMFrame {
 
     std::vector<Object> register_file;
 
-    VirtualRegisterNum caller_return_register;
+    RegName caller_return_register;
 
     VMFrame(size_t pc, size_t func_index, size_t args, const Instruction* code, size_t register_file_size)
       : pc(pc), func_index(func_index), args(args), code(code), register_file(register_file_size), caller_return_register(0)
@@ -199,8 +199,8 @@ struct VirtualMachine {
     void InvokeGlobal(const VMFunction& func, const std::vector<Object>& args);
     void Run();
 
-    inline void WriteRegister(VirtualRegisterNum r, Object v);
-    inline Object ReadRegister(VirtualRegisterNum r);
+    inline void WriteRegister(RegName r, Object v);
+    inline Object ReadRegister(RegName r);
 
     Object Invoke(const VMFunction& func, const std::vector<Object>& args);
     Object Invoke(const GlobalVar& global, const std::vector<Object>& args);
