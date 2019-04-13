@@ -240,13 +240,13 @@ Instruction Move(VirtualRegisterNum src, VirtualRegisterNum dst) {
 void InstructionPrint(std::ostream& os, const Instruction& instr) {
   switch (instr.op) {
     case Opcode::Move: {
-      os << "move " 
-         << instr.from << " " 
+      os << "move "
+         << instr.from << " "
          << instr.dst;
       break;
     }
     case Opcode::Ret: {
-      os << "ret " 
+      os << "ret "
          << instr.result;
       break;
     }
@@ -259,7 +259,7 @@ void InstructionPrint(std::ostream& os, const Instruction& instr) {
         os << instr.packed_args[i] << ",";
       }
       os << ")";
-      os << " " << instr.output_size;  
+      os << " " << instr.output_size;
       break;
     }
     case Opcode::AllocTensor: {
@@ -468,7 +468,7 @@ void VirtualMachine::Run() {
         goto main_loop;
       }
       case Opcode::Invoke: {
-        std::vector<Object> args;        
+        std::vector<Object> args;
         for (size_t i = 0; i < instr.num_args; ++i) {
           args.push_back(ReadRegister(instr.invoke_args_registers[i]));
         }
