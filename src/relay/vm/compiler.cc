@@ -54,13 +54,12 @@ struct ConstantPool : ExprVisitor {
 
   size_t index;
 
-  ConstantPool(const Module& mod) :
+  explicit ConstantPool(const Module& mod) :
     module(mod), const_map(), index(0) {}
 
   void VisitExpr_(const GlobalVarNode* var_node) {
     auto gvar = GetRef<GlobalVar>(var_node);
     if (visited.find(gvar) == visited.end()) {
-
       visited.insert(gvar);
       this->VisitExpr(this->module->Lookup(gvar));
     }
@@ -213,8 +212,8 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
         fields_registers.push_back(last_register);
       }
 
-      // TODO: handle complex field expression
-      // TODO: use correct tag
+      // TODO(@jroesch): handle complex field expression
+      // TODO(@jroesch): use correct tag
       Emit(AllocDatatype(0, tuple->fields.size(), fields_registers, NewRegister()));
     }
 
