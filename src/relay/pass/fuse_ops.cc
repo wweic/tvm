@@ -875,7 +875,7 @@ class FuseMutator : private ExprMutator {
       return MakeNewFunction(ret_group, tuple_get->checked_type(), new_node);
     }
     // This is an intermediate node in the group
-    return new_node;
+    return std::move(new_node);
   }
 
   Expr MakeNewFunction(GraphPartitioner::Group* group, Type ret_type, Expr body) {
@@ -922,7 +922,7 @@ struct GlobalVarLiveness : ExprVisitor {
   Module module;
   std::set<GlobalVar> visited;
 
-  GlobalVarLiveness(const Module& mod) : module(mod), visited() {}
+  explicit GlobalVarLiveness(const Module& mod) : module(mod), visited() {}
 
   void VisitExpr_(const GlobalVarNode* gvar_node) {
     auto gvar = GetRef<GlobalVar>(gvar_node);
