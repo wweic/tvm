@@ -5,9 +5,9 @@
 #ifndef TVM_RUNTIME_NAIVE_ALLOCATOR_H_
 #define TVM_RUNTIME_NAIVE_ALLOCATOR_H_
 
-#include <atomic>
 #include <tvm/runtime/device_api.h>
 #include <tvm/runtime/memory_manager.h>
+#include <atomic>
 
 namespace tvm {
 namespace runtime {
@@ -44,4 +44,4 @@ class NaiveAllocator final : public Allocator {
 }  // namespace runtime
 }  // namespace tvm
 
-#endif // TVM_RUNTIME_NAIVE_ALLOCATOR_H_
+#endif  // TVM_RUNTIME_NAIVE_ALLOCATOR_H_

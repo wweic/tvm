@@ -29,7 +29,8 @@ struct equal_to<TVMContext> {
   }
 };
 
-} // namespace std
+
+}  // namespace std
 
 namespace tvm {
 namespace runtime {
@@ -70,7 +71,8 @@ class MemoryManager {
   std::unordered_map<TVMContext, std::unique_ptr<Allocator>> allocators_;
 };
 
+
 }  // namespace runtime
 }  // namespace tvm
 
-#endif // TVM_RUNTIME_MEMORY_MANAGER_H_
+#endif  // TVM_RUNTIME_MEMORY_MANAGER_H_

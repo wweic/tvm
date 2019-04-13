@@ -1,15 +1,14 @@
 # pylint: disable=no-else-return, unidiomatic-typecheck, undefined-variable
 """The interface of expr function exposed from C++."""
 import tvm
-from tvm._ffi.function import _init_api, _VMObjectBase, _set_vm_obj_function
+from tvm._ffi.function import _VMObjectBase, _set_vm_obj_function
+import numpy as np
 from ..relay import ir_pass
-from ..relay.backend.interpreter import TensorValue, TupleValue, Executor
-from ..relay.module import Module
+from ..relay.backend.interpreter import Executor
 from ..relay.expr import GlobalVar, Function, var, Call, Expr
 from ..relay.ty import FuncType
 from . import _vm
 
-import numpy as np
 
 class VMObject(_VMObjectBase):
     def to_value(self):
@@ -30,6 +29,8 @@ def optimize(expr, mod=None):
     return ck_fused
 
 def eta_expand(expr, mod):
+    """eta expansion
+    """
     if isinstance(expr, GlobalVar):
         ck_type = mod[expr].checked_type
     else:
@@ -46,11 +47,11 @@ def eta_expand(expr, mod):
 
 def _convert(arg, cargs):
     if isinstance(arg, np.ndarray):
-        vm = _vm._Tensor(tvm.nd.array(arg))
-        cargs.append(vm)
+        tensor = _vm._Tensor(tvm.nd.array(arg))
+        cargs.append(tensor)
     elif isinstance(arg, tvm.nd.NDArray):
-        vm = _vm._Tensor(arg)
-        cargs.append(vm)
+        tensor = _vm._Tensor(arg)
+        cargs.append(tensor)
     elif isinstance(arg, tuple):
         field_args = []
         for field in arg:
@@ -105,9 +106,7 @@ class VMExecutor(Executor):
     Useful interface for experimentation and debugging
     the VM can also be used directly from the API.
     supported by `tvm.relay.vm`.
-    """
 
-    """
     Parameters
     ----------
     mod : :py:class:`~tvm.relay.module.Module`
@@ -134,4 +133,3 @@ class VMExecutor(Executor):
             return _eval_vm(self.mod, self.ctx, *args)
 
         return _vm_wrapper
-

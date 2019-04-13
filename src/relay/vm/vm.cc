@@ -4,17 +4,16 @@
  * \brief Abstract device memory management API
  */
 
-#include <chrono>
-#include <iostream>
-#include <vector>
 #include <tvm/runtime/memory_manager.h>
 #include <tvm/relay/expr_functor.h>
 #include <tvm/relay/vm/vm.h>
 #include <tvm/relay/interpreter.h>
 #include <tvm/relay/logging.h>
+#include <chrono>
+#include <iostream>
+#include <vector>
 #include "../backend/compile_engine.h"
 #include "../../runtime/naive_allocator.h"
-
 
 using namespace tvm::runtime;
 
@@ -638,16 +637,16 @@ VirtualMachine VirtualMachine::FromModule(const Module& module,
 
 /*! \brief Convert from an array of relay.Value into VM compatible objects.
  */
-void ConvertArgsToVM(tvm::Array<Value> args, std::vector<Object>& out) {
+void ConvertArgsToVM(tvm::Array<Value> args, std::vector<Object>* out) {
   for (auto arg : args) {
     if (auto tensor = arg.as<TensorValueNode>()) {
-      out.push_back(TensorObj(tensor->data));
+      out->push_back(TensorObj(tensor->data));
     } else if (auto tuple = arg.as<TupleValueNode>()) {
       std::vector<Object> fields;
       for (auto field : tuple->fields) {
-        ConvertArgsToVM({field}, fields);
+        ConvertArgsToVM({field}, &fields);
       }
-      out.push_back(DatatypeObj(0, fields));
+      out->push_back(DatatypeObj(0, fields));
     } else {
       LOG(FATAL) << "unknown case: " << arg;
     }
@@ -658,14 +657,14 @@ void ConvertArgsToVM(tvm::Array<Value> args, std::vector<Object>& out) {
  */
 Object ValueToVM(Value value) {
   std::vector<Object> out;
-  ConvertArgsToVM({value}, out);
+  ConvertArgsToVM({value}, &out);
   CHECK_LT(out.size(), 2);
   return out[0];
 }
 
 using TagNameMap = std::unordered_map<size_t, tvm::relay::Constructor>;
 
-Value VMToValue(TagNameMap& tag_index_map, Object obj) {
+Value VMToValue(const TagNameMap& tag_index_map, Object obj) {
   switch (obj->tag) {
     case ObjectTag::kTensor: {
       return TensorValueNode::make(ToNDArray(obj));

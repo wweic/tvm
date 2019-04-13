@@ -467,6 +467,7 @@ TVM_DLL Expr FoldConstant(const Expr& expr);
  * \brief Fuse operations into expr into seperate functions.
  * \param expr The expression.
  * \param fuse_opt_level Optimization level.
+ * \param mod the module.
  * \return The optimized expression.
  */
 TVM_DLL Expr FuseOps(const Expr& expr, int fuse_opt_level, const Module& mod);

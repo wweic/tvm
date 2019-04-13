@@ -26,11 +26,12 @@ from . import _ir_pass
 
 # Refactor w/ VM code.
 def eta_expand(expr, mod):
+    """eta expansion
+    """
     if isinstance(expr, _expr.GlobalVar):
         ck_type = mod[expr].checked_type
     else:
-        prev = mod[mod.entry_func]
-        mod[mod.entry_func]
+        # mod[mod.entry_func]? why this line here
         expr = _ir_pass.infer_type(expr, mod)
         ck_type = expr.checked_type
 
@@ -100,7 +101,7 @@ class Module(RelayNode):
                 var = _expr.GlobalVar(var)
 
             if not isinstance(val, _expr.Function):
-                if (val, _expr.GlobalVar):
+                if isinstance(val, _expr.GlobalVar):
                     eta_expand(val, self)
                 else:
                     val = _expr.Function([], val)

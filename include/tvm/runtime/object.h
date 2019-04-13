@@ -6,9 +6,9 @@
 #ifndef TVM_RUNTIME_OBJECT_H_
 #define TVM_RUNTIME_OBJECT_H_
 
+#include <tvm/runtime/ndarray.h>
 #include <memory>
 #include <vector>
-#include <tvm/runtime/ndarray.h>
 
 namespace tvm {
 namespace runtime {

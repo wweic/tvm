@@ -10,16 +10,13 @@
 #include <tvm/relay/error.h>
 #include <tvm/relay/interpreter.h>
 #include <tvm/relay/logging.h>
-
+#include <tvm/relay/pass.h>
 #include <vector>
 #include <iostream>
 #include <unordered_map>
 #include <unordered_set>
-
-#include <tvm/relay/pass.h>
 #include "../backend/compile_engine.h"
 #include "../../runtime/naive_allocator.h"
-
 
 
 using namespace tvm::runtime;
@@ -32,7 +29,8 @@ using TagMap = std::unordered_map<tvm::relay::Constructor, size_t, NodeHash, Nod
 using TagNameMap = std::unordered_map<size_t, tvm::relay::Constructor>;
 using GlobalMap = std::unordered_map<GlobalVar, size_t, NodeHash, NodeEqual>;
 using ConstMap = std::unordered_map<Constant, size_t, NodeHash, NodeEqual>;
-using ConstTensorShapeMap = std::unordered_map<TensorType, std::pair<size_t, NDArray>, NodeHash, NodeEqual>;
+using ConstTensorShapeMap = std::unordered_map<TensorType, std::pair<size_t, NDArray>,
+                                               NodeHash, NodeEqual>;
 
 struct VMCompilerContext {
   Module module;
@@ -347,7 +345,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
       auto target = Target::create("llvm");
       auto key = CCacheKeyNode::make(func, target);
       auto cfunc = engine->Lower(key);
-      // TODO: support lowered funcs for multiple targets
+      // TODO(jroesch): support lowered funcs for multiple targets
       CHECK_EQ(cfunc->funcs.size(), 1);
       auto op_index = -1;
       if (seen_funcs.find(cfunc->funcs[0]) == seen_funcs.end()) {

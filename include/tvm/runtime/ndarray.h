@@ -164,6 +164,7 @@ class NDArray {
    * \param shape The shape of the new array.
    * \param dtype The data type of the new array.
    * \param ctx The context of the Array.
+   * \param allocator The memory allocator.
    * \return The created Array
    */
   TVM_DLL static NDArray Empty(std::vector<int64_t> shape,

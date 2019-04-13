@@ -1,19 +1,19 @@
 /*!
  *  Copyright (c) 2018 by Contributors
- * \file tvm/relay/runtime/runtime.h
+ * \file tvm/relay/vm/vm.h
  * \brief Abstract device memory management API
  */
 #ifndef TVM_RELAY_VM_VM_H_
 #define TVM_RELAY_VM_VM_H_
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <memory>
 #include <tvm/relay/expr_functor.h>
 #include <tvm/relay/logging.h>
 #include <tvm/runtime/memory_manager.h>
 #include <tvm/runtime/object.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include <memory>
 
 namespace tvm {
 namespace relay {

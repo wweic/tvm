@@ -57,5 +57,6 @@ NDArray ToNDArray(const Object& obj) {
   return o->data;
 }
 
-} // namespace runtime
-} // namespace tvm
+
+}  // namespace runtime
+}  // namespace tvm
