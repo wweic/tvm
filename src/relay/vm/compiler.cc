@@ -31,8 +31,8 @@ using TagMap = NodeMap<tvm::relay::Constructor, size_t>;
 using TagNameMap = std::unordered_map<size_t, tvm::relay::Constructor>;
 using GlobalMap = NodeMap<GlobalVar, size_t>;
 using ConstMap = NodeMap<Constant, size_t>;
-using ConstTensorShapeMap = NodeMap<TensorType, std::pair<size_t, NDArray>>;
-                                               NodeHash, NodeEqual>;
+using ConstTensorShapeMap = NodeMap<TensorType, std::pair<size_t, NDArray>>,
+                                    NodeHash, NodeEqual >;
 
 struct VMCompilerContext {
   Module module;
