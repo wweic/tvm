@@ -25,11 +25,13 @@ namespace tvm {
 namespace relay {
 namespace vm {
 
-using TagMap = std::unordered_map<tvm::relay::Constructor, size_t, NodeHash, NodeEqual>;
+template<typename T, typename U>
+using NodeMap = std::unordered_map<T, U, NodeHash, NodeEqual>;
+using TagMap = NodeMap<tvm::relay::Constructor, size_t>;
 using TagNameMap = std::unordered_map<size_t, tvm::relay::Constructor>;
-using GlobalMap = std::unordered_map<GlobalVar, size_t, NodeHash, NodeEqual>;
-using ConstMap = std::unordered_map<Constant, size_t, NodeHash, NodeEqual>;
-using ConstTensorShapeMap = std::unordered_map<TensorType, std::pair<size_t, NDArray>,
+using GlobalMap = NodeMap<GlobalVar, size_t>;
+using ConstMap = NodeMap<Constant, size_t>;
+using ConstTensorShapeMap = NodeMap<TensorType, std::pair<size_t, NDArray>>;
                                                NodeHash, NodeEqual>;
 
 struct VMCompilerContext {
@@ -139,7 +141,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
     std::vector<Instruction> instructions;
 
     // var -> register num
-    std::unordered_map<Var, VirtualRegisterNum, NodeHash, NodeEqual> var_register_map;
+    std::unordered_map<Var, RegName, NodeHash, NodeEqual> var_register_map;
 
     size_t last_register;
 
