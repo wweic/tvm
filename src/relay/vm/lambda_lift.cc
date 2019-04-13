@@ -8,11 +8,12 @@
 #include <tvm/relay/expr_functor.h>
 #include <tvm/relay/vm/vm.h>
 #include <tvm/relay/interpreter.h>
+#include <vector>
+#include <iostream>
+
 #include "../backend/compile_engine.h"
 #include "../../runtime/naive_allocator.h"
 
-#include <vector>
-#include <iostream>
 
 using namespace tvm::runtime;
 
@@ -40,7 +41,7 @@ Function MarkClosure(const Function& func) {
 struct LambdaLifter : ExprMutator {
     Module module_;
     std::vector<std::pair<GlobalVar, Function>> lifted_;
-    LambdaLifter(const Module& module) : module_(module) {}
+    explicit LambdaLifter(const Module& module) : module_(module) {}
 
     Expr VisitExpr_(const FunctionNode* func_node) final {
         auto func = GetRef<Function>(func_node);

@@ -86,7 +86,7 @@ struct ConstantPool : ExprVisitor {
       int64_t s = shapes.size();
       DLContext cpu_ctx;
       cpu_ctx.device_type = kDLCPU;
-      cpu_ctx.device_id = 0;      
+      cpu_ctx.device_id = 0;
       auto shape_tensor = NDArray::Empty({s}, Type2TVMType(Int(64)), cpu_ctx);
       int64_t* dims = static_cast<int64_t*>(shape_tensor->data);
       using ::tvm::ir::IntImm;
@@ -160,7 +160,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
     size_t NewRegister() {
       return registers_num++;
     }
-    
+
     inline void Emit(const Instruction& instr) {
       RELAY_LOG(INFO) << "VMCompiler::Emit: instr=" << instr;
       CHECK((int)instr.op < 100) << "Invalid opcode " << (int)instr.op;
@@ -230,8 +230,8 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
       //
       RELAY_LOG(INFO) << let_node->value << std::endl;
       this->VisitExpr(let_node->value);
-      RELAY_LOG(INFO) << this->last_register << std::endl;      
-      var_register_map.insert({ let_node->var, this->last_register });      
+      RELAY_LOG(INFO) << this->last_register << std::endl;
+      var_register_map.insert({ let_node->var, this->last_register });
       this->VisitExpr(let_node->body);
     }
 
@@ -376,7 +376,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
 
       for (auto arg : call_node->args) {
         CHECK(arg.as<VarNode>())
-          << "found: " << RelayPrint(arg, false);
+          << "found: " << AsText(arg, false);
         this->VisitExpr(arg);
         args_registers.push_back(last_register);
       }
@@ -437,7 +437,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
     void VisitExpr_(const FunctionNode* func_node) {
       if (!func_node->IsPrimitive()) {
         LOG(FATAL) << "local functions should have been removed by lambda lifting"
-                  << RelayPrint(GetRef<Function>(func_node), false);
+                  << AsText(GetRef<Function>(func_node), false);
       }
     }
 
@@ -455,9 +455,9 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
 
       // We then assign register num to the free variables
       for (auto param : func->params) {
-        auto arg_register = NewRegister();        
-        CHECK_EQ(i, arg_register);        
-        var_register_map.insert({ param, arg_register });        
+        auto arg_register = NewRegister();
+        CHECK_EQ(i, arg_register);
+        var_register_map.insert({ param, arg_register });
         i++;
       }
 
@@ -466,7 +466,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
     }
 
     void Compile(const Function& func) {
-      RelayPrint(func, false);
+      AsText(func, false);
 
       // We need to generate code specially for lifted closures.
       if (IsClosure(func)) {
@@ -505,7 +505,7 @@ void PopulatePackedFuncMap(
 
 VMFunction CompileFunc(VMCompilerContext* context, const GlobalVar& var, const Function& func) {
   RELAY_LOG(INFO) << "CompileFunc: " << std::endl
-    << RelayPrint(func, false) << std::endl;
+    << AsText(func, false) << std::endl;
   size_t params = func->params.size();
   VMCompiler compiler(context);
   compiler.Compile(func);
@@ -556,7 +556,7 @@ VirtualMachine CompileModule(const Module& mod_ref) {
   PopulateGlobalMap(&context.global_map, mod);
 
   // Next we populate constant map.
-  
+
   auto constant_analysis_result = LayoutConstantPool(mod);
   context.const_map = std::get<0>(constant_analysis_result);
   context.const_tensor_shape_map = std::get<1>(constant_analysis_result);

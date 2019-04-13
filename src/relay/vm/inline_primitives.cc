@@ -81,7 +81,7 @@ struct PrimitiveInliner : ExprMutator {
     Function Inline(const Function& func) {
         RELAY_LOG(INFO) << "Inline "
             << std::endl
-            << "func= " << RelayPrint(func, false)
+            << "func= " << AsText(func, false)
             << std::endl;
 
         auto inlined = FunctionNode::make(
@@ -93,7 +93,7 @@ struct PrimitiveInliner : ExprMutator {
 
         RELAY_LOG(INFO) << "Inline "
             << std::endl
-            << "after_func= " << RelayPrint(inlined, false)
+            << "after_func= " << AsText(inlined, false)
             << std::endl;;
         return inlined;
     }

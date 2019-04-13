@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -310,23 +310,18 @@ Expr ToANormalForm(const Expr& e,
                    std::unordered_set<GlobalVar, NodeHash, NodeEqual>* gv) {
     RELAY_LOG(INFO)
     << "ToANF:" << std::endl
-    << RelayPrint(e, false);
+    << AsText(e, false);
 
-  Expr ret;
-  // if (const auto* f = e.as<FunctionNode>()) {
-  //  return FunctionNode::make(f->params,
-  //                            ToANormalFormAux(f->body, m, gv),
-  //                            f->ret_type,
-  //                           f->type_params,
-  //                            f->attrs);
-  // } else {
-  ret = TransformF([&](const Expr& e) { return ToANormalFormAux(e, m, gv); }, e);
+  Expr ret =
+    TransformF([&](const Expr& e) {
+      return ToANormalFormAux(e, m, gv);
+    }, e);
 
   CHECK(FreeVars(ret).size() == 0);
 
   RELAY_LOG(INFO)
     << "ToANF: transformed" << std::endl
-    << RelayPrint(ret, false);
+    << AsText(ret, false);
 
   return ret;
 }
