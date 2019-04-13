@@ -311,7 +311,8 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
       return AllocTensor(last_register, shapes, dltype, NewRegister());
     }
 
-    void EmitInvokePrimitive(const Function& func, std::vector<size_t> args_registers, const Type& ret_type) {
+    void EmitInvokePrimitive(const Function& func, std::vector<size_t> args_registers,
+                             const Type& ret_type) {
       std::vector<Instruction> allocs;
       size_t return_num = 0;
       if (const TensorTypeNode* ttype = ret_type.as<TensorTypeNode>()) {
@@ -347,7 +348,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
       auto key = CCacheKeyNode::make(func, target);
       auto cfunc = engine->Lower(key);
       // TODO: support lowered funcs for multiple targets
-      CHECK(cfunc->funcs.size() == 1);
+      CHECK_EQ(cfunc->funcs.size(), 1);
       auto op_index = -1;
       if (seen_funcs.find(cfunc->funcs[0]) == seen_funcs.end()) {
         op_index = this->context->lowered_funcs.size();
@@ -517,7 +518,8 @@ VMFunction CompileFunc(VMCompilerContext* context, const GlobalVar& var, const F
   // Would like to refactor this so we only check if closure once.
   if (IsClosure(func)) {
     auto inner_params = Downcast<Function>(func->body)->params.size();
-    return VMFunction(var->name_hint, params + inner_params, compiler.instructions, compiler.registers_num);
+    return VMFunction(var->name_hint, params + inner_params, compiler.instructions,
+                      compiler.registers_num);
   } else {
     return VMFunction(var->name_hint, params, compiler.instructions, compiler.registers_num);
   }

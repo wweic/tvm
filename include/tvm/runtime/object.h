@@ -6,6 +6,8 @@
 #ifndef TVM_RUNTIME_OBJECT_H_
 #define TVM_RUNTIME_OBJECT_H_
 
+#include <memory>
+#include <vector>
 #include <tvm/runtime/ndarray.h>
 
 namespace tvm {
@@ -23,7 +25,7 @@ std::ostream& operator<<(std::ostream& os, const ObjectTag&);
 // TODO(@jroesch): Use intrusive pointer.
 struct ObjectCell {
   ObjectTag tag;
-  ObjectCell(ObjectTag tag) : tag(tag) {}
+  explicit ObjectCell(ObjectTag tag) : tag(tag) {}
   ObjectCell() {}
   virtual ~ObjectCell() {}
 };
@@ -36,9 +38,9 @@ struct ObjectCell {
  * Maintains a reference count for the object.
  */
 class Object {
-public:
+ public:
   std::shared_ptr<ObjectCell> ptr;
-  Object(std::shared_ptr<ObjectCell> ptr) : ptr(ptr) {}
+  explicit Object(std::shared_ptr<ObjectCell> ptr) : ptr(ptr) {}
   Object() : ptr() {}
   Object(const Object& obj) : ptr(obj.ptr) {}
   ObjectCell* operator->() {
@@ -48,7 +50,7 @@ public:
 
 struct TensorCell : public ObjectCell {
   NDArray data;
-  TensorCell(const NDArray& data)
+  explicit TensorCell(const NDArray& data)
     : ObjectCell(ObjectTag::kTensor), data(data) {}
 };
 

@@ -6,6 +6,7 @@
 #ifndef TVM_RUNTIME_MEMORY_MANAGER_H_
 #define TVM_RUNTIME_MEMORY_MANAGER_H_
 
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -44,8 +45,8 @@ struct Buffer {
 
 class Allocator {
  public:
-  Allocator(TVMContext ctx) : ctx_(ctx) {}
-  
+  explicit Allocator(TVMContext ctx) : ctx_(ctx) {}
+
   virtual Buffer Alloc(size_t nbytes, size_t alignment, TVMType type_hint) = 0;
   virtual void Free(const Buffer& buffer) = 0;
   virtual size_t UsedMemory() = 0;
@@ -60,7 +61,7 @@ class MemoryManager {
   static MemoryManager* Global();
 
   Allocator* GetAllocator(TVMContext ctx);
-  
+
  private:
   MemoryManager() {}
 

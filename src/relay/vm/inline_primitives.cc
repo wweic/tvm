@@ -25,7 +25,7 @@ struct PrimitiveInliner : ExprMutator {
     Module module_;
     std::unordered_map<Var, Expr, NodeHash, NodeEqual> var_map;
 
-    PrimitiveInliner(const Module& module) : module_(module) {}
+    explicit PrimitiveInliner(const Module& module) : module_(module) {}
 
     Expr VisitExpr_(const LetNode* let_node) {
         var_map.insert({let_node->var, VisitExpr(let_node->value) });

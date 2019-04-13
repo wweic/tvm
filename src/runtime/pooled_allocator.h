@@ -5,11 +5,12 @@
 #ifndef TVM_RUNTIME_POOLED_ALLOCATOR_H_
 #define TVM_RUNTIME_POOLED_ALLOCATOR_H_
 
-#include <tvm/runtime/device_api.h>
-#include <tvm/runtime/memory_manager.h>
 #include <atomic>
 #include <mutex>
 #include <unordered_map>
+#include <vector>
+#include <tvm/runtime/device_api.h>
+#include <tvm/runtime/memory_manager.h>
 
 namespace tvm {
 namespace runtime {
@@ -18,7 +19,7 @@ class PooledAllocator final : public Allocator {
  public:
   static constexpr size_t kDefaultPageSize = 4096;
 
-  PooledAllocator(TVMContext ctx, size_t page_size=kDefaultPageSize) :
+  explicit PooledAllocator(TVMContext ctx, size_t page_size = kDefaultPageSize) :
       Allocator(ctx), page_size_(page_size), used_memory_(0) {}
 
   ~PooledAllocator() {

@@ -4,6 +4,9 @@
  * \brief Abstract device memory management API
  */
 
+#include <chrono>
+#include <iostream>
+#include <vector>
 #include <tvm/runtime/memory_manager.h>
 #include <tvm/relay/expr_functor.h>
 #include <tvm/relay/vm/vm.h>
@@ -12,9 +15,6 @@
 #include "../backend/compile_engine.h"
 #include "../../runtime/naive_allocator.h"
 
-#include <vector>
-#include <iostream>
-#include <chrono>
 
 using namespace tvm::runtime;
 
@@ -104,27 +104,29 @@ Instruction::Instruction(const Instruction& instr) {
 // TODO(@jroesch): this leaks memory fix me
 Instruction::~Instruction() {}
 
-Instruction Ret(VirtualRegisterNum result) {
+Instruction Ret(RegName result) {
   Instruction instr;
   instr.op = Opcode::Ret;
   instr.result = result;
   return instr;
 }
 
-Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size, const std::vector<VirtualRegisterNum>& args) {
+Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size,
+                         const std::vector<RegName>& args) {
   Instruction instr;
   instr.op = Opcode::InvokePacked;
   instr.packed_index = packed_index;
   instr.arity = arity;
   instr.output_size = output_size;
-  instr.packed_args = new VirtualRegisterNum[arity];
+  instr.packed_args = new RegName[arity];
   for (int i = 0; i < arity; ++i) {
     instr.packed_args[i] = args[i];
   }
   return instr;
 }
 
-Instruction AllocTensor(VirtualRegisterNum shape_register, const std::vector<int64_t>& shape, DLDataType dtype, size_t dst) {
+Instruction AllocTensor(RegName shape_register, const std::vector<int64_t>& shape,
+                        DLDataType dtype, size_t dst) {
   Instruction instr;
   instr.op = Opcode::AllocTensor;
   instr.dst = dst;
@@ -134,33 +136,37 @@ Instruction AllocTensor(VirtualRegisterNum shape_register, const std::vector<int
   return instr;
 }
 
-Instruction AllocDatatype(size_t tag, size_t num_fields, const std::vector<VirtualRegisterNum>& datatype_fields, size_t dst) {
+Instruction AllocDatatype(size_t tag, size_t num_fields,
+                          const std::vector<RegName>& datatype_fields,
+                          size_t dst) {
   Instruction instr;
   instr.op = Opcode::AllocDatatype;
   instr.dst = dst;
   instr.constructor_tag = tag;
   instr.num_fields = num_fields;
-  instr.datatype_fields = new VirtualRegisterNum[num_fields];
+  instr.datatype_fields = new RegName[num_fields];
   for (auto i = 0; i < num_fields; ++i) {
     instr.datatype_fields[i] = datatype_fields[i];
   }
   return instr;
 }
 
-Instruction AllocClosure(size_t func_index, size_t free_vars, const std::vector<VirtualRegisterNum>& free_var_register, size_t dst) {
+Instruction AllocClosure(size_t func_index, size_t free_vars,
+                         const std::vector<RegName>& free_var_register,
+                         size_t dst) {
   Instruction instr;
   instr.op = Opcode::AllocClosure;
   instr.dst = dst;
   instr.clo_index = func_index;
   instr.num_freevar = free_vars;
-  instr.free_vars = new VirtualRegisterNum[instr.num_freevar];
+  instr.free_vars = new RegName[instr.num_freevar];
   for (size_t i = 0; i < instr.num_freevar; ++i) {
     instr.free_vars[i] = free_var_register[i];
   }
   return instr;
 }
 
-Instruction GetField(VirtualRegisterNum object, size_t field_index, VirtualRegisterNum dst) {
+Instruction GetField(RegName object, size_t field_index, RegName dst) {
   Instruction instr;
   instr.op = Opcode::GetField;
   instr.dst = dst;
@@ -169,7 +175,7 @@ Instruction GetField(VirtualRegisterNum object, size_t field_index, VirtualRegis
   return instr;
 }
 
-Instruction If(VirtualRegisterNum cond, size_t true_branch, size_t false_branch) {
+Instruction If(RegName cond, size_t true_branch, size_t false_branch) {
   Instruction instr;
   instr.op = Opcode::If;
   instr.if_cond = cond;
@@ -178,7 +184,7 @@ Instruction If(VirtualRegisterNum cond, size_t true_branch, size_t false_branch)
   return instr;
 }
 
-Instruction Select(VirtualRegisterNum cond, VirtualRegisterNum op1, VirtualRegisterNum op2, VirtualRegisterNum dst) {
+Instruction Select(RegName cond, RegName op1, RegName op2, RegName dst) {
   Instruction instr;
   instr.op = Opcode::Select;
   instr.dst = dst;
@@ -195,33 +201,33 @@ Instruction Goto(size_t pc_offset) {
   return instr;
 }
 
-Instruction Invoke(size_t func_index, const std::vector<VirtualRegisterNum>& args_registers, VirtualRegisterNum dst) {
+Instruction Invoke(size_t func_index, const std::vector<RegName>& args_registers, RegName dst) {
   Instruction instr;
   instr.op = Opcode::Invoke;
   instr.dst = dst;
   instr.func_index = func_index;
   instr.num_args = args_registers.size();
-  instr.invoke_args_registers = new VirtualRegisterNum[instr.num_args];
+  instr.invoke_args_registers = new RegName[instr.num_args];
   for (auto i = 0; i < instr.num_args; ++i) {
     instr.invoke_args_registers[i] = args_registers[i];
   }
   return instr;
 }
 
-Instruction InvokeClosure(VirtualRegisterNum closure, const std::vector<VirtualRegisterNum>& args, VirtualRegisterNum dst) {
+Instruction InvokeClosure(RegName closure, const std::vector<RegName>& args, RegName dst) {
   Instruction instr;
   instr.op = Opcode::InvokeClosure;
   instr.dst = dst;
   instr.closure = closure;
   instr.closure_args_num = args.size();
-  instr.closure_args = new VirtualRegisterNum[args.size()];
+  instr.closure_args = new RegName[args.size()];
   for (auto i = 0; i < args.size(); ++i) {
     instr.closure_args[i] = args[i];
   }
   return instr;
 }
 
-Instruction LoadConst(size_t const_index, VirtualRegisterNum dst) {
+Instruction LoadConst(size_t const_index, RegName dst) {
   Instruction instr;
   instr.op = Opcode::LoadConst;
   instr.dst = dst;
@@ -229,7 +235,7 @@ Instruction LoadConst(size_t const_index, VirtualRegisterNum dst) {
   return instr;
 }
 
-Instruction Move(VirtualRegisterNum src, VirtualRegisterNum dst) {
+Instruction Move(RegName src, RegName dst) {
   Instruction instr;
   instr.op = Opcode::Move;
   instr.dst = dst;
@@ -369,7 +375,7 @@ void VirtualMachine::PushFrame(size_t arg_count, size_t ret_pc, const VMFunction
 }
 
 size_t VirtualMachine::PopFrame() {
-  CHECK(frames.size() != 0);
+  CHECK_NE(frames.size(), 0);
   const VMFrame& fr = frames.back();
   func_index = fr.func_index;
   code = fr.code;
@@ -412,7 +418,7 @@ Object VirtualMachine::Invoke(const GlobalVar& global,
 }
 
 void InvokePacked(const PackedFunc& func, size_t arg_count, size_t output_size,
-                  std::vector<Object>& args) {
+                  const std::vector<Object>& args) {
   std::vector<TVMValue> values(arg_count);
   std::vector<int> codes(arg_count);
   runtime::TVMArgsSetter setter(values.data(), codes.data());
@@ -445,7 +451,7 @@ void VirtualMachine::Run() {
   while (true) {
   main_loop:
     auto const& instr = this->code[this->pc];
-    RELAY_LOG(INFO) << "\nExecuting(" << pc << "): " ;
+    RELAY_LOG(INFO) << "\nExecuting(" << pc << "): ";
 #if USE_RELAY_LOG
     InstructionPrint(std::cout, instr);
 #endif  // USE_RELAY_LOG
@@ -485,7 +491,8 @@ void VirtualMachine::Run() {
         }
         InvokePacked(func, arity, instr.output_size, args);
         for (size_t i = 0; i < instr.output_size; ++i) {
-          WriteRegister(instr.packed_args[instr.arity - instr.output_size + i], args[instr.arity - instr.output_size + i]);
+          WriteRegister(instr.packed_args[instr.arity - instr.output_size + i],
+                        args[instr.arity - instr.output_size + i]);
         }
         pc++;
         goto main_loop;
@@ -511,7 +518,7 @@ void VirtualMachine::Run() {
         CHECK(object->tag == ObjectTag::kDatatype)
           << "Object is not data type object, register "
           << instr.object << ", Object tag "
-          << (int)object->tag;
+          << static_cast<int>(object->tag);
         const std::shared_ptr<DatatypeCell>& tuple =
           std::dynamic_pointer_cast<DatatypeCell>(object.ptr);
         auto field = tuple->fields[instr.field_index];
@@ -683,7 +690,7 @@ std::tuple<Object, TagNameMap>
 EvaluateModule(const Module& module, const std::vector<TVMContext> ctxs,
                const std::vector<Object>& vm_args) {
   VirtualMachine vm = VirtualMachine::FromModule(module, ctxs);
-  // TODO: (zhiics) This measurement is for temporary usage. Remove it later. We
+  // TODO(zhiics): This measurement is for temporary usage. Remove it later. We
   // need to introduce a better profiling method.
 #if ENABLE_PROFILING
   RELAY_LOG(INFO) << "Entry function is " << module->entry_func << std::endl;

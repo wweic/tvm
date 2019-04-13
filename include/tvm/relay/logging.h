@@ -68,10 +68,10 @@ struct EnableRelayDebug {
 
 // Define an empty class that will ignore error messages during compile-time.
 class RelayLog {};
-const static RelayLog relay_log;
+static const RelayLog relay_log;
 
 template <typename T>
-const static inline RelayLog& operator<<(const RelayLog& log, const T& msg) {
+static const inline RelayLog& operator<<(const RelayLog& log, const T& msg) {
   return log;
 }
 
@@ -79,7 +79,7 @@ const static inline RelayLog& operator<<(const RelayLog& log, const T& msg) {
 using EndlManipulator = std::add_pointer<std::ostream&(std::ostream&)>::type;
 
 // Define an operator<< to take std::endl as well.
-const static inline RelayLog& operator<<(const RelayLog& log,
+static const inline RelayLog& operator<<(const RelayLog& log,
                                          const EndlManipulator& msg) {
   return log;
 }

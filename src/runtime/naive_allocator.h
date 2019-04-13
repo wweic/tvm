@@ -14,8 +14,8 @@ namespace runtime {
 
 class NaiveAllocator final : public Allocator {
  public:
-  NaiveAllocator(TVMContext ctx) : Allocator(ctx), used_memory_(0) {}
-  
+  explicit NaiveAllocator(TVMContext ctx) : Allocator(ctx), used_memory_(0) {}
+
   Buffer Alloc(size_t nbytes, size_t alignment, TVMType type_hint) override {
     Buffer buf;
     buf.ctx = ctx_;

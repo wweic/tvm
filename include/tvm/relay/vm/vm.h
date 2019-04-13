@@ -3,9 +3,11 @@
  * \file tvm/relay/runtime/runtime.h
  * \brief Abstract device memory management API
  */
-#ifndef TVM_RELAY_RUNTIME_H_
-#define TVM_RELAY_RUNTIME_H_
+#ifndef TVM_RELAY_VM_VM_H_
+#define TVM_RELAY_VM_VM_H_
 
+#include <string>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 #include <tvm/relay/expr_functor.h>
@@ -125,10 +127,14 @@ struct Instruction {
 // Helpers to build instructions.
 Instruction Select(RegName cond, RegName op1, RegName op2, RegName dst);
 Instruction Ret(RegName result);
-Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size, const std::vector<RegName>& args);
-Instruction AllocTensor(RegName shape_register, const std::vector<int64_t>& shape, DLDataType dtype, RegName dst);
-Instruction AllocDatatype(size_t tag, size_t num_fields, const std::vector<RegName>& fields, RegName dst);
-Instruction AllocClosure(size_t func_index, size_t num_freevar, const std::vector<RegName>& free_vars, RegName dst);
+Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size,
+                         const std::vector<RegName>& args);
+Instruction AllocTensor(RegName shape_register, const std::vector<int64_t>& shape,
+                        DLDataType dtype, RegName dst);
+Instruction AllocDatatype(size_t tag, size_t num_fields, const std::vector<RegName>& fields,
+                          RegName dst);
+Instruction AllocClosure(size_t func_index, size_t num_freevar,
+                         const std::vector<RegName>& free_vars, RegName dst);
 Instruction GetField(RegName object, size_t field_index, RegName dst);
 Instruction If(RegName cond, size_t true_branch, size_t false_branch);
 Instruction Goto(size_t pc_offset);
@@ -143,7 +149,8 @@ struct VMFunction {
   std::vector<Instruction> instructions;
   size_t register_file_size;
 
-  VMFunction(std::string name, size_t params, std::vector<Instruction> instructions, size_t register_file_size)
+  VMFunction(std::string name, size_t params, std::vector<Instruction> instructions,
+             size_t register_file_size)
     : name(name), params(params), instructions(instructions), register_file_size(register_file_size)
       {}
 
@@ -169,9 +176,10 @@ struct VMFrame {
 
     RegName caller_return_register;
 
-    VMFrame(size_t pc, size_t func_index, size_t args, const Instruction* code, size_t register_file_size)
-      : pc(pc), func_index(func_index), args(args), code(code), register_file(register_file_size), caller_return_register(0)
-       {}
+    VMFrame(size_t pc, size_t func_index, size_t args, const Instruction* code,
+            size_t register_file_size)
+      : pc(pc), func_index(func_index), args(args), code(code), register_file(register_file_size),
+        caller_return_register(0) {}
 };
 
 struct VirtualMachine {
@@ -225,4 +233,4 @@ VirtualMachine CompileModule(const Module& mod);
 }  // namespace relay
 }  // namespace tvm
 
-#endif  // TVM_RELAY_RUNTIME_H_
+#endif  // TVM_RELAY_VM_VM_H_
