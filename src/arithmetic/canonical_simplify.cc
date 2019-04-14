@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -507,7 +507,7 @@ Mutate_(const Add* op, const Expr& self) {
   } else {
     ret.CopyOnWrite()->AddToSelf(ToSplitExpr(b), 1);
   }
-  return ret;
+  return std::move(ret);
 }
 
 Expr CanonicalSimplifier::Impl::
@@ -533,7 +533,7 @@ Mutate_(const Sub* op, const Expr& self) {
   } else {
     ret.CopyOnWrite()->AddToSelf(ToSplitExpr(b), -1);
   }
-  return ret;
+  return std::move(ret);
 }
 
 
@@ -558,11 +558,11 @@ Mutate_(const Mul* op, const Expr& self) {
     if (a.as<SumExprNode>()) {
       SumExpr ret(std::move(a.node_));
       ret.CopyOnWrite()->MulToSelf(bconst->value);
-      return ret;
+      return std::move(ret);
     } else {
       SplitExpr ret = ToSplitExpr(std::move(a));
       ret.CopyOnWrite()->MulToSelf(bconst->value);
-      return ret;
+      return std::move(ret);
     }
   }
 
@@ -681,7 +681,7 @@ Mutate_(const Div* op, const Expr& self) {
                 SplitDivConst(ToSplitExpr(temp), cval), 1);
           }
         }
-        return lhs;
+        return std::move(lhs);
       }
     } else {
       // if a >= 0 && a < cval, then result == 0

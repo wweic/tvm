@@ -13,6 +13,11 @@
 namespace tvm {
 namespace runtime {
 
+struct ObjectCell;
+template<typename T>
+class ObjectPtr;
+class Object;
+
 enum struct ObjectTag {
   kTensor,
   kClosure,
@@ -22,13 +27,281 @@ enum struct ObjectTag {
 
 std::ostream& operator<<(std::ostream& os, const ObjectTag&);
 
-// TODO(@jroesch): Use intrusive pointer.
 struct ObjectCell {
+ public:
+  /*!
+   * \brief The type of object deleter.
+   * \param The self pointer to the ObjectCell.
+   */
+  typedef void (*FDeleter)(ObjectCell* self);
+
+  /*! \brief The tag of the object.
+   *
+   * Describes which type of value
+   * is represented by this object.
+  */
   ObjectTag tag;
-  explicit ObjectCell(ObjectTag tag) : tag(tag) {}
+
+ protected:
+  // default constructor and copy constructor
   ObjectCell() {}
-  virtual ~ObjectCell() {}
+
+  explicit ObjectCell(ObjectTag tag) : tag(tag) {}
+
+  // override the copy and assign constructors to do nothing.
+  // This is to make sure only contents, but not deleter and ref_counter
+  // are copied when a child class copies itself.
+  ObjectCell(const ObjectCell& other) {  // NOLINT(*)
+  }
+
+  ObjectCell(ObjectCell&& other) {  // NOLINT(*)
+  }
+
+  ObjectCell& operator=(const ObjectCell& other) {  //NOLINT(*)
+    return *this;
+  }
+
+  ObjectCell& operator=(ObjectCell&& other) {  //NOLINT(*)
+    return *this;
+  }
+ private:
+
+  /*! \brief Internal reference counter */
+  std::atomic<int> ref_counter_{0};
+  /*!
+   * \brief deleter of this object to enable customized allocation.
+   * If the deleter is nullptr, no deletion will be performed.
+   * The creator of the Node must always set the deleter field properly.
+   */
+  FDeleter deleter_ = nullptr;
+
+  /*!
+   * \brief Increment the reference count.
+   */
+  void IncRef() {
+    ref_counter_.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  /*!
+   * \brief Decrement the reference count.
+   */
+  void DecRef() {
+    if (ref_counter_.fetch_sub(1, std::memory_order_release) == 1) {
+      std::atomic_thread_fence(std::memory_order_acquire);
+      if (this->deleter_ != nullptr) {
+        (*this->deleter_)(this);
+      }
+    }
+  }
+
+  int use_count() const {
+    return ref_counter_.load(std::memory_order_relaxed);
+  }
+
+  // friend declaration
+  template<typename>
+  friend class ObjectPtr;
+
+  template<typename Y, typename... Args>
+  friend ObjectPtr<Y> MakeObject(Args&&...);
 };
+
+/*!
+ * \brief A custom smart pointer for Object.
+ *  must be subclass of NodeBase
+ * \tparam T the content data type.
+ */
+template<typename T>
+class ObjectPtr {
+ public:
+  /*! \brief default constructor */
+  ObjectPtr() {}
+  /*! \brief default constructor */
+  ObjectPtr(std::nullptr_t) {}  // NOLINT(*)
+  /*!
+   * \brief copy constructor
+   * \param other The value to be moved
+   */
+  ObjectPtr(const ObjectPtr<T>& other)  // NOLINT(*)
+      : ObjectPtr(other.data_) {
+  }
+  /*!
+   * \brief copy constructor
+   * \param other The value to be moved
+   */
+  template<typename U>
+  ObjectPtr(const ObjectPtr<U>& other)  // NOLINT(*)
+      : ObjectPtr(other.data_) {
+    static_assert(std::is_base_of<T, U>::value,
+                  "can only assign of child class ObjectPtr to parent");
+  }
+  /*!
+   * \brief move constructor
+   * \param other The value to be moved
+   */
+  ObjectPtr(ObjectPtr<T>&& other) // NOLINT(*)
+      : data_(other.data_) {
+    other.data_ = nullptr;
+  }
+
+  /*!
+   * \brief move constructor
+   * \param other The value to be moved
+   */
+  template<typename Y>
+  ObjectPtr(ObjectPtr<Y>&& other)  // NOLINT(*)
+      : data_(other.data_) {
+    static_assert(std::is_base_of<T, Y>::value,
+                  "can only assign of child class ObjectPtr to parent");
+    other.data_ = nullptr;
+  }
+
+  /*! \brief destructor */
+  ~ObjectPtr() {
+    this->reset();
+  }
+
+  /*!
+   * \brief Swap this array with another NDArray
+   * \param other The other NDArray
+   */
+  void swap(ObjectPtr<T>& other) {  // NOLINT(*)
+    std::swap(data_, other.data_);
+  }
+
+  /*!
+   * \return Get the content of the pointer
+   */
+  T* get() const {
+    return static_cast<T*>(data_);
+  }
+
+  /*!
+   * \return The pointer
+   */
+  T* operator->() const {
+    return get();
+  }
+
+  /*!
+   * \return The reference
+   */
+  T& operator*() const { // NOLINT(*)
+    return *get();
+  }
+
+  /*!
+   * \brief copy assignmemt
+   * \param other The value to be assigned.
+   * \return reference to self.
+   */
+  ObjectPtr<T>& operator=(const ObjectPtr<T>& other) {  // NOLINT(*)
+    // takes in plane operator to enable copy elison.
+    // copy-and-swap idiom
+    ObjectPtr(other).swap(*this);  // NOLINT(*)
+    return *this;
+  }
+
+  /*!
+   * \brief move assignmemt
+   * \param other The value to be assigned.
+   * \return reference to self.
+   */
+  ObjectPtr<T>& operator=(ObjectPtr<T>&& other) {  // NOLINT(*)
+    // copy-and-swap idiom
+    ObjectPtr(std::move(other)).swap(*this); // NOLINT(*)
+    return *this;
+  }
+
+  /*! \brief reset the content of ptr to be nullptr */
+  void reset() {
+    if (data_ != nullptr) {
+      data_->DecRef();
+      data_ = nullptr;
+    }
+  }
+
+  /*! \return The use count of the ptr, for debug purposes */
+  int use_count() const {
+    return data_ != nullptr ? data_->use_count() : 0;
+  }
+
+  /*! \return whether the reference is unique */
+  bool unique() const {
+    return data_ != nullptr && data_->use_count() == 1;
+  }
+
+  /*! \return Whether two ObjectPtr do not equals each other */
+  bool operator==(const ObjectPtr<T>& other) const {
+    return data_ == other.data_;
+  }
+
+  /*! \return Whether two ObjectPtr equals each other */
+  bool operator!=(const ObjectPtr<T>& other) const {
+    return data_ != other.data_;
+  }
+
+  /*! \return Whether the pointer is nullptr */
+  bool operator==(std::nullptr_t null) const {
+    return data_ == nullptr;
+  }
+
+  /*! \return Whether the pointer is not nullptr */
+  bool operator!=(std::nullptr_t null) const {
+    return data_ != nullptr;
+  }
+
+  /* ObjectPtr's support custom allocators.
+   *
+   * The below allocator represents the simplest
+   * possible impl. It can be easily swapped
+   * for customized executor's, different allocation
+   * strategies, and so on.
+   *
+   * See memory.h for more discussion on NodePtr's
+   * allocator.
+   */
+  class StdAllocator {
+   public:
+    template <typename... Args>
+    static T* New(Args&&... args) {
+      return new T(std::forward<Args>(args)...);
+    }
+
+    static ObjectCell::FDeleter Deleter() { return Deleter_; }
+
+   private:
+    static void Deleter_(ObjectCell* ptr) { delete static_cast<T*>(ptr); }
+  };
+
+  template<typename U>
+  ObjectPtr<U> As() const {
+    auto ptr = reinterpret_cast<U*>(get());
+    return ObjectPtr<U>(ptr);
+  }
+ private:
+  /*! \brief internal pointer field */
+  ObjectCell* data_{nullptr};
+  /*!
+   * \brief constructor from NodeBase
+   * \param data The node base pointer
+   */
+  explicit ObjectPtr(ObjectCell* data)
+      : data_(data) {
+    if (data != nullptr) {
+      data_->IncRef();
+    }
+  }
+
+  template<typename Y, typename... Args>
+  friend ObjectPtr<Y> MakeObject(Args&&...);
+  template <typename>
+  friend class ObjectPtr;
+};
+
+struct TensorCell;
+struct DatatypeCell;
+struct ClosureCell;
 
 /*!
  * \brief A managed object in the TVM runtime.
@@ -39,13 +312,22 @@ struct ObjectCell {
  */
 class Object {
  public:
-  std::shared_ptr<ObjectCell> ptr;
-  explicit Object(std::shared_ptr<ObjectCell> ptr) : ptr(ptr) {}
+  ObjectPtr<ObjectCell> ptr;
+  explicit Object(ObjectPtr<ObjectCell> ptr) : ptr(ptr) {}
   Object() : ptr() {}
   Object(const Object& obj) : ptr(obj.ptr) {}
   ObjectCell* operator->() {
     return this->ptr.operator->();
   }
+
+  static Object Tensor(const NDArray& data);
+  static Object Datatype(size_t tag, const std::vector<Object>& fields);
+  static Object Tuple(const std::vector<Object>& fields);
+  static Object Closure(size_t func_index, const std::vector<Object>& free_vars);
+
+  inline ObjectPtr<TensorCell> AsTensor() const;
+  inline ObjectPtr<DatatypeCell> AsDatatype() const;
+  inline ObjectPtr<ClosureCell> AsClosure() const;
 };
 
 struct TensorCell : public ObjectCell {
@@ -70,11 +352,23 @@ struct ClosureCell : public ObjectCell {
     : ObjectCell(ObjectTag::kClosure), func_index(func_index), free_vars(free_vars) {}
 };
 
-Object TensorObj(const NDArray& data);
-Object DatatypeObj(size_t tag, const std::vector<Object>& fields);
-Object TupleObj(const std::vector<Object>& fields);
-Object ClosureObj(size_t func_index, std::vector<Object> free_vars);
 NDArray ToNDArray(const Object& obj);
+
+/*!
+ * \brief Allocate a node object.
+ * \param args arguments to the constructor.
+ * \tparam T the node type.
+ * \return The NodePtr to the allocated object.
+ */
+template<typename T, typename... Args>
+inline ObjectPtr<T> MakeObject(Args&&... args) {
+  using Allocator = typename ObjectPtr<T>::StdAllocator;
+  static_assert(std::is_base_of<ObjectCell, T>::value,
+                "MakeObject can only be used to create ");
+  T* node = Allocator::New(std::forward<Args>(args)...);
+  node->deleter_ = Allocator::Deleter();
+  return ObjectPtr<T>(node);
+}
 
 }  // namespace runtime
 }  // namespace tvm

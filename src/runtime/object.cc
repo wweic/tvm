@@ -31,32 +31,47 @@ std::ostream& operator<<(std::ostream& os, const ObjectTag& tag) {
   return os;
 }
 
-Object TensorObj(const NDArray& data) {
-  auto ptr = std::make_shared<TensorCell>(data);
-  return Object(std::dynamic_pointer_cast<ObjectCell>(ptr));
+Object Object::Tensor(const NDArray& data) {
+  ObjectPtr<ObjectCell> ptr = MakeObject<TensorCell>(data);
+  return Object(ptr);
 }
 
-Object DatatypeObj(size_t tag, const std::vector<Object>& fields) {
-  auto ptr = std::make_shared<DatatypeCell>(tag, fields);
-  return Object(std::dynamic_pointer_cast<ObjectCell>(ptr));
+Object Object::Datatype(size_t tag, const std::vector<Object>& fields) {
+  ObjectPtr<ObjectCell> ptr = MakeObject<DatatypeCell>(tag, fields);
+  return Object(ptr);
 }
 
-Object TupleObj(const std::vector<Object>& fields) {
-  return DatatypeObj(0, fields);
+Object Object::Tuple(const std::vector<Object>& fields) {
+  return Object::Datatype(0, fields);
 }
 
-Object ClosureObj(size_t func_index, std::vector<Object> free_vars) {
-  auto ptr = std::make_shared<ClosureCell>(func_index, free_vars);
-  return Object(std::dynamic_pointer_cast<ObjectCell>(ptr));
+Object Object::Closure(size_t func_index, const std::vector<Object>& free_vars) {
+  ObjectPtr<ObjectCell> ptr = MakeObject<ClosureCell>(func_index, free_vars);
+  return Object(ptr);
+}
+
+ObjectPtr<TensorCell> Object::AsTensor() const {
+  CHECK(ptr.get());
+  CHECK(ptr.get()->tag == ObjectTag::kTensor);
+  return ptr.As<TensorCell>();
+}
+
+ObjectPtr<DatatypeCell> Object::AsDatatype() const {
+  CHECK(ptr.get());
+  CHECK(ptr.get()->tag == ObjectTag::kDatatype);
+  return ptr.As<DatatypeCell>();
+}
+
+ObjectPtr<ClosureCell> Object::AsClosure() const {
+  CHECK(ptr.get());
+  CHECK(ptr.get()->tag == ObjectTag::kClosure);
+  return ptr.As<ClosureCell>();
 }
 
 NDArray ToNDArray(const Object& obj) {
-  CHECK(obj.ptr.get());
-  CHECK(obj.ptr->tag == ObjectTag::kTensor) << "Expected tensor, found " << obj.ptr->tag;
-  std::shared_ptr<TensorCell> o = std::dynamic_pointer_cast<TensorCell>(obj.ptr);
-  return o->data;
+  auto tensor = obj.AsTensor();
+  return tensor->data;
 }
-
 
 }  // namespace runtime
 }  // namespace tvm
