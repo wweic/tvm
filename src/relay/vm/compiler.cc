@@ -32,7 +32,6 @@ using TagNameMap = std::unordered_map<size_t, tvm::relay::Constructor>;
 using GlobalMap = NodeMap<GlobalVar, size_t>;
 using ConstMap = NodeMap<Constant, size_t>;
 using ConstTensorShapeMap = NodeMap<TensorType, std::pair<size_t, NDArray>>,
-                                    NodeHash, NodeEqual >;
 
 struct VMCompilerContext {
   Module module;
@@ -571,11 +570,11 @@ VirtualMachine CompileModule(const Module& mod_ref) {
   vm.constants.resize(context.const_map.size() + context.const_tensor_shape_map.size());
 
   for (auto pair : context.const_map) {
-    vm.constants[pair.second] = TensorObj(pair.first->data);
+    vm.constants[pair.second] = Object::Tensor(pair.first->data);
   }
 
   for (auto pair : context.const_tensor_shape_map) {
-    vm.constants[pair.second.first] = TensorObj(pair.second.second);
+    vm.constants[pair.second.first] = Object::Tensor(pair.second.second);
   }
 
   for (auto named_func : mod->functions) {

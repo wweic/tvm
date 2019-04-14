@@ -42,6 +42,25 @@ struct ObjectCell {
   */
   ObjectTag tag;
 
+  /*!
+   * \brief Increment the reference count.
+   */
+  void IncRef() {
+    ref_counter_.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  /*!
+   * \brief Decrement the reference count.
+   */
+  void DecRef() {
+    if (ref_counter_.fetch_sub(1, std::memory_order_release) == 1) {
+      std::atomic_thread_fence(std::memory_order_acquire);
+      if (this->deleter_ != nullptr) {
+        (*this->deleter_)(this);
+      }
+    }
+  }
+
  protected:
   // default constructor and copy constructor
   ObjectCell() {}
@@ -64,6 +83,7 @@ struct ObjectCell {
   ObjectCell& operator=(ObjectCell&& other) {  //NOLINT(*)
     return *this;
   }
+
  private:
 
   /*! \brief Internal reference counter */
@@ -74,25 +94,6 @@ struct ObjectCell {
    * The creator of the Node must always set the deleter field properly.
    */
   FDeleter deleter_ = nullptr;
-
-  /*!
-   * \brief Increment the reference count.
-   */
-  void IncRef() {
-    ref_counter_.fetch_add(1, std::memory_order_relaxed);
-  }
-
-  /*!
-   * \brief Decrement the reference count.
-   */
-  void DecRef() {
-    if (ref_counter_.fetch_sub(1, std::memory_order_release) == 1) {
-      std::atomic_thread_fence(std::memory_order_acquire);
-      if (this->deleter_ != nullptr) {
-        (*this->deleter_)(this);
-      }
-    }
-  }
 
   int use_count() const {
     return ref_counter_.load(std::memory_order_relaxed);
@@ -286,12 +287,15 @@ class ObjectPtr {
    * \brief constructor from NodeBase
    * \param data The node base pointer
    */
+  // TODO(@jroesch: NodePtr design doesn't really work here due to the passing.
+  public:
   explicit ObjectPtr(ObjectCell* data)
       : data_(data) {
     if (data != nullptr) {
       data_->IncRef();
     }
   }
+  private:
 
   template<typename Y, typename... Args>
   friend ObjectPtr<Y> MakeObject(Args&&...);

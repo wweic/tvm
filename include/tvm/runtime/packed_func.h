@@ -472,6 +472,12 @@ class TVMPODValue_ {
     TVM_CHECK_TYPE_CODE(type_code_, kNDArrayContainer);
     return NDArray(static_cast<NDArray::Container*>(value_.v_handle));
   }
+  operator Object() const {
+    if (type_code_ == kNull) return Object();
+    TVM_CHECK_TYPE_CODE(type_code_, kObject);
+    auto ptr = ObjectPtr<ObjectCell>(static_cast<ObjectCell*>(value_.v_handle));
+    return Object(ptr);
+  }
   operator TVMContext() const {
     TVM_CHECK_TYPE_CODE(type_code_, kTVMContext);
     return value_.v_ctx;
@@ -835,7 +841,9 @@ class TVMRetValue : public TVMPODValue_ {
         break;
       }
       case kObject: {
-        throw dmlc::Error("here");
+        // *this = other.operator Object();
+        // break;
+        LOG(FATAL) << "impl me";
       }
       default: {
         if (other.type_code() < kExtBegin) {
@@ -884,7 +892,10 @@ class TVMRetValue : public TVMPODValue_ {
         static_cast<NDArray::Container*>(value_.v_handle)->DecRef();
         break;
       }
-      // case kModuleHandle: delete ptr<runtime::Object>(); break;
+      case kObject: {
+        static_cast<ObjectCell*>(value_.v_handle)->DecRef();
+        break;
+      }
     }
     if (type_code_ > kExtBegin) {
 #if TVM_RUNTIME_HEADER_ONLY
