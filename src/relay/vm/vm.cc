@@ -500,9 +500,7 @@ void VirtualMachine::Run() {
       }
       case Opcode::InvokeClosure: {
         auto object = ReadRegister(instr.closure);
-        CHECK(object->tag == ObjectTag::kClosure);
-        const std::shared_ptr<ClosureCell>& closure =
-          std::dynamic_pointer_cast<ClosureCell>(object.ptr);
+        const auto& closure = object.AsClosure();
         std::vector<Object> args;
         for (size_t i = 0; i < instr.closure_args_num; ++i) {
           args.push_back(ReadRegister(instr.closure_args[i]));
@@ -520,8 +518,7 @@ void VirtualMachine::Run() {
           << "Object is not data type object, register "
           << instr.object << ", Object tag "
           << static_cast<int>(object->tag);
-        const std::shared_ptr<DatatypeCell>& tuple =
-          std::dynamic_pointer_cast<DatatypeCell>(object.ptr);
+        const auto& tuple = object.AsDatatype();
         auto field = tuple->fields[instr.field_index];
         WriteRegister(instr.dst, field);
         pc++;
@@ -672,7 +669,7 @@ Value VMToValue(const TagNameMap& tag_index_map, Object obj) {
       return TensorValueNode::make(ToNDArray(obj));
     }
     case ObjectTag::kDatatype: {
-      auto data_type = std::dynamic_pointer_cast<DatatypeCell>(obj.ptr);
+      const auto& data_type = obj.AsDatatype();
 
       tvm::Array<Value> fields;
       for (size_t i = 0; i < data_type->fields.size(); ++i) {
