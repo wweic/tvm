@@ -561,7 +561,7 @@ void VirtualMachine::Run() {
         shape.assign(dims, dims + ti.ndim);
         auto allocator = MemoryManager::Global()->GetAllocator(ctxs[0]);
         auto data = NDArray::Empty(shape, ti.dtype, ctxs[0], allocator);
-        auto obj = TensorObj(data);
+        auto obj = Object::Tensor(data);
         WriteRegister(instr.dst, obj);
         pc++;
         goto main_loop;
@@ -571,7 +571,7 @@ void VirtualMachine::Run() {
         for (size_t i = 0; i < instr.num_fields; ++i) {
           fields.push_back(ReadRegister(instr.datatype_fields[i]));
         }
-        Object obj = DatatypeObj(instr.constructor_tag, fields);
+        Object obj = Object::Datatype(instr.constructor_tag, fields);
         WriteRegister(instr.dst, obj);
         pc++;
         goto main_loop;
@@ -581,7 +581,7 @@ void VirtualMachine::Run() {
         for (size_t i = 0; i < instr.num_freevar; i++) {
           free_vars.push_back(ReadRegister(instr.free_vars[i]));
         }
-        WriteRegister(instr.dst, ClosureObj(instr.func_index, free_vars));
+        WriteRegister(instr.dst, Object::Closure(instr.func_index, free_vars));
         pc++;
         goto main_loop;
       }
@@ -639,13 +639,13 @@ VirtualMachine VirtualMachine::FromModule(const Module& module,
 void ConvertArgsToVM(tvm::Array<Value> args, std::vector<Object>* out) {
   for (auto arg : args) {
     if (auto tensor = arg.as<TensorValueNode>()) {
-      out->push_back(TensorObj(tensor->data));
+      out->push_back(Object::Tensor(tensor->data));
     } else if (auto tuple = arg.as<TupleValueNode>()) {
       std::vector<Object> fields;
       for (auto field : tuple->fields) {
         ConvertArgsToVM({field}, &fields);
       }
-      out->push_back(DatatypeObj(0, fields));
+      out->push_back(Object::Datatype(0, fields));
     } else {
       LOG(FATAL) << "unknown case: " << arg;
     }
@@ -676,7 +676,7 @@ Value VMToValue(const TagNameMap& tag_index_map, Object obj) {
         fields.push_back(VMToValue(tag_index_map, data_type->fields[i]));
       }
 
-      return ConstructorValueNode::make(tag_index_map[data_type->tag], fields);
+      return ConstructorValueNode::make(tag_index_map.at(data_type->tag), fields);
     }
     default:
       LOG(FATAL) << "unsupported return value";
@@ -719,7 +719,7 @@ TVM_REGISTER_API("relay._vm._VMToValue")
 
 TVM_REGISTER_API("relay._vm._Tensor")
 .set_body([](TVMArgs args, TVMRetValue* ret) {
-    *ret = TensorObj(args[0]);
+    *ret = Object::Tensor(args[0]);
 });
 
 TVM_REGISTER_API("relay._vm._Tuple")
@@ -728,7 +728,7 @@ TVM_REGISTER_API("relay._vm._Tuple")
   for (auto i = 0; i < args.size(); i++) {
     fields.push_back(args[i]);
   }
-  *ret = TupleObj(fields);
+  *ret = Object::Tuple(fields);
 });
 
 template<typename T>

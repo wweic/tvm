@@ -329,9 +329,9 @@ class Object {
   static Object Tuple(const std::vector<Object>& fields);
   static Object Closure(size_t func_index, const std::vector<Object>& free_vars);
 
-  inline ObjectPtr<TensorCell> AsTensor() const;
-  inline ObjectPtr<DatatypeCell> AsDatatype() const;
-  inline ObjectPtr<ClosureCell> AsClosure() const;
+  ObjectPtr<TensorCell> AsTensor() const;
+  ObjectPtr<DatatypeCell> AsDatatype() const;
+  ObjectPtr<ClosureCell> AsClosure() const;
 };
 
 struct TensorCell : public ObjectCell {
