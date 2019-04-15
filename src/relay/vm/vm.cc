@@ -706,12 +706,12 @@ EvaluateModule(const Module& module, const std::vector<TVMContext> ctxs,
   return res;
 }
 
-TVM_REGISTER_API("relay._vm._ValueToVM")
+TVM_REGISTER_API("relay._vm._ValueToObject")
 .set_body([](TVMArgs args, TVMRetValue* ret) {
     *ret = ValueToVM(args[0]);
 });
 
-TVM_REGISTER_API("relay._vm._VMToValue")
+TVM_REGISTER_API("relay._vm._ObjectToValue")
 .set_body([](TVMArgs args, TVMRetValue* ret) {
     TagNameMap tag_index_map{};
     *ret = VMToValue(tag_index_map, args[0]);

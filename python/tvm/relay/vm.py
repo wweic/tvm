@@ -1,7 +1,7 @@
 # pylint: disable=no-else-return, unidiomatic-typecheck, undefined-variable
 """The interface of expr function exposed from C++."""
 import tvm
-from tvm._ffi.function import _VMObjectBase, _set_vm_obj_function
+from tvm._ffi.function import _ObjectBase, _set_obj_function
 import numpy as np
 from ..relay import ir_pass
 from ..relay.backend.interpreter import Executor
@@ -10,14 +10,14 @@ from ..relay.ty import FuncType
 from . import _vm
 
 
-class VMObject(_VMObjectBase):
+class Object(_ObjectBase):
     def to_value(self):
-        return _vm._VMToValue(self)
+        return _vm._ObjectToValue(self)
 
     def tag(self):
-        return _vm._VMObjectTag(self)
+        return _vm._ObjectTag(self)
 
-_set_vm_obj_function(VMObject)
+_set_obj_function(Object)
 
 def optimize(expr, mod=None):
     # TODO: We need to move this optimization code into the optimizer/pass manager
