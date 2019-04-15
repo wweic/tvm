@@ -100,6 +100,17 @@ RELAY_REGISTER_OP("cast")
 // relay.expand_dims
 TVM_REGISTER_NODE_TYPE(ExpandDimsAttrs);
 
+Array<Shape> ExpandDimsShapeFunc(const Array<Input>& inputs) {
+  auto out_shape = inputs[0]->data.Shape();
+  Shape ret;
+  ret.push_back(tvm::Integer(1));
+  for (size_t i = 0; i < out_shape.size(); ++i) {
+    ret.push_back(tvm::Integer(out_shape[i]));
+  }
+  std::cout << "Calculate shape " << ret << "\n";
+  return { ret };
+}
+
 bool ExpandDimsRel(const Array<Type>& types,
                    int num_inputs,
                    const Attrs& attrs,
@@ -174,7 +185,8 @@ RELAY_REGISTER_OP("expand_dims")
 .set_support_level(1)
 .add_type_rel("ExpandDims", ExpandDimsRel)
 .set_attr<FTVMCompute>("FTVMCompute", ExpandDimsCompute)
-.set_attr<TOpPattern>("TOpPattern", kBroadcast);
+.set_attr<TOpPattern>("TOpPattern", kBroadcast)
+.set_attr<FShapeFunc>("FShapeFunc", ExpandDimsShapeFunc);
 
 // relay.concatenate
 TVM_REGISTER_NODE_TYPE(ConcatenateAttrs);

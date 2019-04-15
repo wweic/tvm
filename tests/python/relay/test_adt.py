@@ -20,52 +20,20 @@ from tvm.relay.ir_pass import infer_type
 from tvm.relay.backend.interpreter import Value, TupleValue, ConstructorValue
 from tvm.relay import testing, create_executor
 from tvm.relay.prelude import Prelude
+import numpy as np
 
 mod = relay.Module()
 p = Prelude(mod)
 ctx = tvm.context("llvm", 0)
 intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
 
-z = p.z
-s = p.s
-nat = p.nat
-double = p.double
-add = p.add
-
-optional = p.optional
-some = p.some
-none = p.none
-
-nil = p.nil
-cons = p.cons
-l = p.l
+tensor_t = p.tensor_t
+tensor0 = p.tensor0
+tensor1 = p.tensor1
+tensor2 = p.tensor2
+tensor3 = p.tensor3
+add_one = p.add_one
 hd = p.hd
-tl = p.tl
-nth = p.nth
-update = p.update
-length = p.length
-map = p.map
-foldl = p.foldl
-foldr = p.foldr
-foldr1 = p.foldr1
-sum = p.sum
-
-concat = p.concat
-filter = p.filter
-zip = p.zip
-rev = p.rev
-unfoldl = p.unfoldl
-unfoldr = p.unfoldr
-map_accumr = p.map_accumr
-map_accuml = p.map_accuml
-
-tree = p.tree
-rose = p.rose
-tmap = p.tmap
-size = p.size
-
-compose = p.compose
-iterate = p.iterate
 
 # this is an example of using the adt value in python side
 def count(n):
@@ -114,6 +82,40 @@ def tree_to_dict(t):
         l = tree_to_dict(subtree)
         ret['children'].append(l)
     return ret
+
+def veval(f, *args, ctx=tvm.cpu()):
+    global mod
+    if isinstance(f, relay.Expr):
+        ex = relay.create_executor('debug', mod=mod, ctx=ctx)
+        if len(args) == 0:
+            return ex.evaluate(f)
+        else:
+            return ex.evaluate(f)(*args)
+    else:
+        assert isinstance(f, relay.Module), "expected expression or module"
+        mod = f
+        ex = relay.create_executor('debug', mod=mod, ctx=ctx)
+        if len(args) == 0:
+            return ex.evaluate(mod[mod.entry_func])
+        else:
+            return ex.evaluate(mod[mod.entry_func])(*args)
+
+def test_tensor():
+    x = relay.var('x')
+    y = relay.var('y')
+    z = relay.var('z')
+
+    # f = relay.Function([x], add_one(tensor1(x)))
+    # x_data = np.random.rand(2,).astype('float32')
+    # res = veval(f, x_data)
+    # print("\n")
+    # print(res)
+
+    f = relay.Function([x], add_one(tensor2(x)))
+    x_data = np.random.rand(2, 2).astype('float32')
+    res = veval(f, x_data)
+    print("\n")
+    print(res)
 
 def test_nat_value():
     assert count(make_nat(10)) == 10

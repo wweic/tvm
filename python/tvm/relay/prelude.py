@@ -16,10 +16,11 @@
 # under the License.
 # pylint: disable=no-else-return, unidiomatic-typecheck, invalid-name
 """Adds certain standard global functions and ADT definitions to the module."""
-from .ty import GlobalTypeVar, TypeVar, FuncType, TupleType, scalar_type
+from .ty import GlobalTypeVar, TensorType, Any, TypeVar, FuncType, TupleType, scalar_type
 from .expr import Var, Function, GlobalVar, Let, If, Tuple, TupleGetItem
 from .adt import Constructor, TypeData, Clause, Match
 from .adt import PatternConstructor, PatternVar, PatternWildcard
+from . import op
 
 class Prelude:
     """Contains standard definitions."""
@@ -33,6 +34,30 @@ class Prelude:
         self.nil = Constructor("nil", [], self.l)
         self.cons = Constructor("cons", [a, self.l(a)], self.l)
         self.mod[self.l] = TypeData(self.l, [a], [self.nil, self.cons])
+
+    def define_tensor_adt(self):
+        """dynamic tensor
+        """
+        self.tensor_t = GlobalTypeVar("tensor_t")
+        tensor0_type = TensorType([])        
+        tensor1_type = TensorType([Any()])
+        tensor2_type = TensorType([Any(), Any()])        
+        tensor3_type = TensorType([Any(), Any(), Any()])                
+        self.tensor0 = Constructor("tensor0", [tensor0_type], self.tensor_t)
+        self.tensor1 = Constructor("tensor1", [tensor1_type], self.tensor_t)
+        self.tensor2 = Constructor("tensor2", [tensor2_type], self.tensor_t)        
+        self.tensor3 = Constructor("tensor3", [tensor3_type], self.tensor_t)                
+
+        self.mod[self.tensor_t] = TypeData(self.tensor_t, [], [self.tensor0, self.tensor1, self.tensor2])
+
+    def define_add_one(self):
+        self.add_one = GlobalVar("add_one")
+        x = Var("x", self.tensor_t())
+        t = Var("t")
+        t2 = Var("t2")
+        tensor1_case = Clause(PatternConstructor(self.tensor1, [PatternVar(t)]), self.tensor2(op.expand_dims(t, 0, 1)))
+        tensor2_case = Clause(PatternConstructor(self.tensor2, [PatternVar(t2)]), self.tensor3(op.expand_dims(t2, 0, 1)))
+        self.mod[self.add_one] = Function([x], Match(x, [tensor1_case, tensor2_case]))
 
     def define_list_hd(self):
         """Defines a function to get the head of a list. Assume the list has at least one
@@ -506,34 +531,37 @@ class Prelude:
         self.mod = mod
         self.define_list_adt()
         self.define_list_hd()
-        self.define_list_tl()
-        self.define_list_map()
-        self.define_list_foldl()
-        self.define_list_foldr()
-        self.define_list_foldr1()
-        self.define_list_concat()
-        self.define_list_filter()
-        self.define_list_zip()
-        self.define_list_rev()
-        self.define_list_map_accumr()
-        self.define_list_map_accuml()
+        # self.define_list_tl()
+        # self.define_list_map()
+        # self.define_list_foldl()
+        # self.define_list_foldr()
+        # self.define_list_foldr1()
+        # self.define_list_concat()
+        # self.define_list_filter()
+        # self.define_list_zip()
+        # self.define_list_rev()
+        # self.define_list_map_accumr()
+        # self.define_list_map_accuml()
 
-        self.define_optional_adt()
-        self.define_list_unfoldr()
-        self.define_list_unfoldl()
+        # self.define_optional_adt()
+        # self.define_list_unfoldr()
+        # self.define_list_unfoldl()
 
-        self.define_nat_adt()
-        self.define_nat_double()
-        self.define_nat_add()
-        self.define_list_length()
-        self.define_list_nth()
-        self.define_list_update()
-        self.define_list_sum()
+        self.define_tensor_adt()
+        self.define_add_one()
 
-        self.define_tree_adt()
-        self.define_tree_map()
-        self.define_tree_size()
+        # self.define_nat_adt()
+        # self.define_nat_double()
+        # self.define_nat_add()
+        # self.define_list_length()
+        # self.define_list_nth()
+        # self.define_list_update()
+        # self.define_list_sum()
 
-        self.define_id()
-        self.define_compose()
-        self.define_iterate()
+        # self.define_tree_adt()
+        # self.define_tree_map()
+        # self.define_tree_size()
+
+        # self.define_id()
+        # self.define_compose()
+        # self.define_iterate()

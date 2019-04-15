@@ -589,6 +589,8 @@ class TypeInferencer::Resolver : public ExprMutator, PatternMutator {
     : tmap_(tmap), solver_(solver) {
   }
 
+  std::unordered_map<Var, Expr, NodeHash, NodeEqual> nodes_cache;
+
   Expr VisitExpr_(const VarNode* op) final {
     return AttachCheckedType(op);
   }
@@ -663,7 +665,16 @@ class TypeInferencer::Resolver : public ExprMutator, PatternMutator {
   // attach checked type to the mutated node.
   template<typename T>
   Expr AttachCheckedType(const T* op) {
-    auto it = tmap_.find(GetRef<Expr>(op));
+    Expr expr = GetRef<Expr>(op);
+    auto vp = expr.as<VarNode>();
+    if (vp) {
+      auto var = GetRef<Var>(vp);
+      auto it = nodes_cache.find(var);
+      if (it != nodes_cache.end()) {
+        return it->second;
+      }
+    }
+    auto it = tmap_.find(expr);
     CHECK(it != tmap_.end());
     Type checked_type = solver_->Resolve(it->second.checked_type);
 
@@ -706,6 +717,10 @@ class TypeInferencer::Resolver : public ExprMutator, PatternMutator {
         !need_update_var &&
         !need_update_call &&
         !need_update_fn) {
+      if (vp) {
+        auto var = GetRef<Var>(vp);
+        nodes_cache.insert({ var, new_e });
+      }        
       return new_e;
     }
 
@@ -744,6 +759,10 @@ class TypeInferencer::Resolver : public ExprMutator, PatternMutator {
       CHECK(fn_type != nullptr);
       new_fn->ret_type = fn_type->ret_type;
     }
+    if (vp) {
+      auto var = GetRef<Var>(vp);
+      nodes_cache.insert({ var, new_e });
+    }            
     return new_e;
   }
 

@@ -202,7 +202,7 @@ class TypeSolver::Unifier : public TypeFunctor<Type(const Type&, const Type&)> {
   }
 
   Type VisitType_(const TensorTypeNode* op, const Type& tn) final {
-    std::cout << "CHECKING TENSOR TYPE" << std::endl;
+    std::cout << "CHECKING TENSOR TYPE " << op << " " << GetRef<TensorType>(op) << std::endl;
     const auto* tt_node = tn.as<TensorTypeNode>();
     if (!tt_node) {
       return Type(nullptr);
