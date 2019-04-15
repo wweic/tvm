@@ -120,7 +120,7 @@ Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size,
   instr.arity = arity;
   instr.output_size = output_size;
   instr.packed_args = new RegName[arity];
-  for (int i = 0; i < arity; ++i) {
+  for (size_t i = 0; i < arity; ++i) {
     instr.packed_args[i] = args[i];
   }
   return instr;
@@ -146,7 +146,7 @@ Instruction AllocDatatype(size_t tag, size_t num_fields,
   instr.constructor_tag = tag;
   instr.num_fields = num_fields;
   instr.datatype_fields = new RegName[num_fields];
-  for (auto i = 0; i < num_fields; ++i) {
+  for (size_t i = 0; i < num_fields; ++i) {
     instr.datatype_fields[i] = datatype_fields[i];
   }
   return instr;
@@ -209,7 +209,7 @@ Instruction Invoke(size_t func_index, const std::vector<RegName>& args_registers
   instr.func_index = func_index;
   instr.num_args = args_registers.size();
   instr.invoke_args_registers = new RegName[instr.num_args];
-  for (auto i = 0; i < instr.num_args; ++i) {
+  for (size_t i = 0; i < instr.num_args; ++i) {
     instr.invoke_args_registers[i] = args_registers[i];
   }
   return instr;
@@ -222,7 +222,7 @@ Instruction InvokeClosure(RegName closure, const std::vector<RegName>& args, Reg
   instr.closure = closure;
   instr.closure_args_num = args.size();
   instr.closure_args = new RegName[args.size()];
-  for (auto i = 0; i < args.size(); ++i) {
+  for (size_t i = 0; i < args.size(); ++i) {
     instr.closure_args[i] = args[i];
   }
   return instr;

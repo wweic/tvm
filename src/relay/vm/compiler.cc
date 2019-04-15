@@ -103,7 +103,8 @@ struct ConstantPool : ExprVisitor {
     }
 
     Expr op = call_node->op;
-    if (auto func_node = op.as<FunctionNode>()) {
+    auto func_node = op.as<FunctionNode>();
+    if (func_node) {
       auto ret_type = call_node->checked_type();
       if (const TensorTypeNode* ttype = ret_type.as<TensorTypeNode>()) {
         auto shape = GetTensorConstant(ttype);
@@ -476,7 +477,7 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
         return;
       }
 
-      for (auto i = 0; i < func->params.size(); ++i) {
+      for (size_t i = 0; i < func->params.size(); ++i) {
         auto arg_register = NewRegister();
         CHECK_EQ(arg_register, i);
         var_register_map.insert({ func->params[i], arg_register });
