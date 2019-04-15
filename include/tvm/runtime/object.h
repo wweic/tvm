@@ -8,6 +8,7 @@
 
 #include <tvm/runtime/ndarray.h>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace tvm {
@@ -85,7 +86,6 @@ struct ObjectCell {
   }
 
  private:
-
   /*! \brief Internal reference counter */
   std::atomic<int> ref_counter_{0};
   /*!
@@ -280,6 +280,7 @@ class ObjectPtr {
     auto ptr = reinterpret_cast<U*>(get());
     return ObjectPtr<U>(ptr);
   }
+
  private:
   /*! \brief internal pointer field */
   ObjectCell* data_{nullptr};
@@ -287,16 +288,16 @@ class ObjectPtr {
    * \brief constructor from NodeBase
    * \param data The node base pointer
    */
-  // TODO(@jroesch: NodePtr design doesn't really work here due to the passing.
-  public:
+  // TODO(jroesch): NodePtr design doesn't really work here due to the passing.
+ public:
   explicit ObjectPtr(ObjectCell* data)
-      : data_(data) {
+     : data_(data) {
     if (data != nullptr) {
       data_->IncRef();
     }
   }
-  private:
 
+ private:
   template<typename Y, typename... Args>
   friend ObjectPtr<Y> MakeObject(Args&&...);
   template <typename>
