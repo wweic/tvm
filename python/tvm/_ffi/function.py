@@ -30,12 +30,12 @@ try:
     if _FFI_MODE == "ctypes":
         raise ImportError()
     if sys.version_info >= (3, 0):
-        from ._cy3.core import _set_class_function, _set_class_module
+        from ._cy3.core import _set_class_function, _set_class_module, _set_obj_function
         from ._cy3.core import FunctionBase as _FunctionBase
         from ._cy3.core import ObjectBase as _ObjectBase
         from ._cy3.core import convert_to_tvm_func
     else:
-        from ._cy2.core import _set_class_function, _set_class_module
+        from ._cy2.core import _set_class_function, _set_class_module, _set_obj_function
         from ._cy2.core import FunctionBase as _FunctionBase
         from ._cy2.core import ObjectBase as _ObjectBase
         from ._cy2.core import convert_to_tvm_func
