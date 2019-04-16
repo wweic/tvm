@@ -64,6 +64,14 @@ struct PrimitiveInliner : ExprMutator {
             }
         }
 
+       if (auto global = op.as<GlobalVarNode>()) {
+            return CallNode::make(
+                GetRef<GlobalVar>(global),
+                call->args,
+                call->attrs,
+                call->type_args);
+        }
+
         return ExprMutator::VisitExpr_(call);
     }
 
