@@ -1,7 +1,7 @@
 /*!
  *  Copyright (c) 2018 by Contributors
  * \file tvm/relay/vm/vm.h
- * \brief Abstract device memory management API
+ * \brief A virtual machine for executing Relay programs.
  */
 #ifndef TVM_RELAY_VM_VM_H_
 #define TVM_RELAY_VM_VM_H_
@@ -21,8 +21,14 @@ namespace vm {
 
 using namespace tvm::runtime;
 
+/*! \brief A register name. */
 using RegName = size_t;
 
+/*! \brief A enumeration of Relay's opcodes.
+ *
+ * The opcode is used to implement instruction
+ * as a tagged union.
+*/
 enum struct Opcode {
   Move,
   Ret,
@@ -39,78 +45,67 @@ enum struct Opcode {
   Goto
 };
 
-struct Instruction {
-  struct TensorInfo {
-      RegName shape_register;
-      size_t ndim;
-      DLDataType dtype;
-  };
 
+struct Instruction {
   Opcode op;
 
   // Destination register that the opcode writes to
   RegName dst;
 
   union {
-    TensorInfo tensor_info;
-
-    // For InvokeClosure
-    struct {
+    struct /* AllocTensorOperands */ {
+      RegName shape_register;
+      size_t ndim;
+      DLDataType dtype;
+    };
+    struct /* InvokeClosureOperands */ {
       RegName closure;
       size_t closure_args_num;
       RegName* closure_args;
     };
-    // For Ret
-    struct {
+    struct /* ReturnOperands */ {
       RegName result;
     };
-    // For Move
-    struct {
+    struct /* MoveOperands */ {
       RegName from;
     };
-    struct {
+    struct /* PackedOperands */ {
       size_t packed_index;
       size_t arity;
       size_t output_size;
       RegName* packed_args;
     };
-    // For Select node
-    struct {
+    struct /* SelectOperands */ {
       RegName select_cond;
       RegName select_op1;
       RegName select_op2;
     };
-    // For If node
-    struct {
+    struct /* IfOperands */ {
       RegName if_cond;
       size_t true_offset;
       size_t false_offset;
     };
-    // For Invoke
-    struct {
+    struct /* InvokeOperands */ {
       size_t func_index;
       size_t num_args;
       RegName* invoke_args_registers;
     };
-    struct {
+    struct /* ConstOperands */ {
       size_t const_index;
     };
-    struct {
+    struct /* JumpOperands */ {
       size_t pc_offset;
     };
-    // For GetField
-    struct {
+    struct /* ProjOperands */ {
       RegName object;
       size_t field_index;
     };
-    // For AllocDatatype
-    struct {
+    struct /* AllocDatatypeOperands */ {
       size_t constructor_tag;
       size_t num_fields;
       RegName* datatype_fields;
     };
-    // For AllocClosure
-    struct {
+    struct /* AllocClosureOperands */ {
       size_t clo_index;
       size_t num_freevar;
       RegName* free_vars;
@@ -124,42 +119,66 @@ struct Instruction {
   friend std::ostream& operator<<(std::ostream& os, const Instruction&);
 };
 
-// Helpers to build instructions.
+/*! \brief */
 Instruction Select(RegName cond, RegName op1, RegName op2, RegName dst);
+/*! \brief */
 Instruction Ret(RegName result);
+/*! \brief */
 Instruction InvokePacked(size_t packed_index, size_t arity, size_t output_size,
                          const std::vector<RegName>& args);
+/*! \brief */
 Instruction AllocTensor(RegName shape_register, const std::vector<int64_t>& shape,
                         DLDataType dtype, RegName dst);
+/*! \brief */
 Instruction AllocDatatype(size_t tag, size_t num_fields, const std::vector<RegName>& fields,
                           RegName dst);
+/*! \brief */
 Instruction AllocClosure(size_t func_index, size_t num_freevar,
                          const std::vector<RegName>& free_vars, RegName dst);
+/*! \brief */
 Instruction GetField(RegName object, size_t field_index, RegName dst);
+/*! \brief */
 Instruction If(RegName cond, size_t true_branch, size_t false_branch);
+/*! \brief */
 Instruction Goto(size_t pc_offset);
+/*! \brief */
 Instruction Invoke(size_t func_index, const std::vector<RegName>& args, RegName dst);
+/*! \brief */
 Instruction InvokeClosure(RegName closure, const std::vector<RegName>& args, RegName dst);
+/*! \brief */
 Instruction LoadConst(size_t const_index, RegName dst);
+/*! \brief */
 Instruction Move(RegName src, RegName dst);
 
+/*! \brief A representation of a Relay function in the VM.
+ *
+ * Contains metadata about the compiled function, as
+ * we as the compiled VM instructions.
+ */
 struct VMFunction {
+  /*! \brief The function's name. */
   std::string name;
+  /*! \brief The number of function parameters. */
   size_t params;
+  /*! \brief The instructions representing the function. */
   std::vector<Instruction> instructions;
+  /*! \brief The size of the frame for this function */
   size_t register_file_size;
 
-  VMFunction(std::string name, size_t params, std::vector<Instruction> instructions,
+  VMFunction(std::string name,
+             size_t params,
+             std::vector<Instruction> instructions,
              size_t register_file_size)
-    : name(name), params(params), instructions(instructions), register_file_size(register_file_size)
+    : name(name),
+      params(params),
+      instructions(instructions),
+      register_file_size(register_file_size)
       {}
 
   VMFunction() {}
 
   friend std::ostream& operator<<(std::ostream& os, const VMFunction&);
 };
-
-void VMFunctionPrint(const VMFunction& vm_func);
 
 /*! \brief A representation of a stack frame.
  *
@@ -182,11 +201,20 @@ struct VMFrame {
         caller_return_register(0) {}
 };
 
+/*! \brief The virtual machine.
+ *
+ * The virtual machine contains all the current execution state,
+ * as well as the global view of functions, the global constant
+ * table, the compiled operators.
+ */
 struct VirtualMachine {
-    // TODO(@jroesch):
+    /*! \brief The virtual machine's packed function table. */
     std::vector<PackedFunc> packed_funcs;
+    /*! \brief The virtual machine's function table. */
     std::vector<VMFunction> functions;
+    /*! \brief The frame stack. */
     std::vector<VMFrame> frames;
+    /*! \brief The constant pool. */
     std::vector<Object> constants;
 
     // Frame State
@@ -227,6 +255,7 @@ bool IsClosure(const Function& func);
 Module LambdaLift(const Module& module);
 Module InlinePrimitives(const Module& module);
 
+/*! \brief Compile a module into a virtual machine which can be executed. */
 VirtualMachine CompileModule(const Module& mod);
 
 }  // namespace vm

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -326,26 +326,6 @@ TVM_REGISTER_API("relay._expr.TempExprRealize")
 .set_body_typed<Expr(TempExpr)>([](TempExpr temp) {
   return temp->Realize();
 });
-
-TypeOf TypeOfNode::make(relay::Expr expr) {
-  NodePtr<TypeOfNode> n = make_node<TypeOfNode>();
-  n->expr = std::move(expr);
-  return TypeOf(n);
-}
-
-TVM_REGISTER_NODE_TYPE(TypeOfNode);
-
-TVM_REGISTER_API("relay._make.TypeOf")
-.set_body([](TVMArgs args, TVMRetValue* ret) {
-    *ret = TypeOfNode::make(args[0]);
-});
-
-TVM_STATIC_IR_FUNCTOR_REGISTER(IRPrinter, vtable)
-.set_dispatch<TypeOfNode>([](const TypeOfNode* node,
-                                tvm::IRPrinter* p) {
-  p->stream << "TypeOf(" << node->expr << ")";
-});
-
 
 }  // namespace relay
 }  // namespace tvm

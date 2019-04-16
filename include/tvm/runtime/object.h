@@ -163,8 +163,8 @@ class ObjectPtr {
   }
 
   /*!
-   * \brief Swap this array with another NDArray
-   * \param other The other NDArray
+   * \brief Swap this array with another Object
+   * \param other The other Object
    */
   void swap(ObjectPtr<T>& other) {  // NOLINT(*)
     std::swap(data_, other.data_);

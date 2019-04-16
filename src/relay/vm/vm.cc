@@ -56,7 +56,9 @@ Instruction::Instruction(const Instruction& instr) {
       this->result = instr.result;
       return;
     case Opcode::AllocTensor:
-      this->tensor_info = instr.tensor_info;
+      this->shape_register = instr.shape_register;
+      this->dtype = instr.dtype;
+      this->ndim = instr.ndim;
       return;
     case Opcode::AllocDatatype:
       this->constructor_tag = instr.constructor_tag;
@@ -131,9 +133,9 @@ Instruction AllocTensor(RegName shape_register, const std::vector<int64_t>& shap
   Instruction instr;
   instr.op = Opcode::AllocTensor;
   instr.dst = dst;
-  instr.tensor_info.shape_register = shape_register;
-  instr.tensor_info.ndim = shape.size();
-  instr.tensor_info.dtype = dtype;
+  instr.shape_register = shape_register;
+  instr.ndim = shape.size();
+  instr.dtype = dtype;
   return instr;
 }
 
@@ -272,8 +274,8 @@ void InstructionPrint(std::ostream& os, const Instruction& instr) {
     case Opcode::AllocTensor: {
       os << "alloc_tensor ";
       os << instr.dst << " ";
-      os << instr.tensor_info.shape_register << " ";
-      os << TVMType2Type(instr.tensor_info.dtype);
+      os << instr.shape_register << " ";
+      os << TVMType2Type(instr.dtype);
       break;
     }
     case Opcode::AllocDatatype: {
@@ -552,15 +554,14 @@ void VirtualMachine::Run() {
         cpu_ctx.device_type = kDLCPU;
         cpu_ctx.device_id = 0;
 
-        auto shape_tensor_obj = ReadRegister(instr.tensor_info.shape_register);
+        auto shape_tensor_obj = ReadRegister(instr.shape_register);
         NDArray shape_tensor = ToNDArray(shape_tensor_obj).CopyTo(cpu_ctx);
 
         int64_t* dims = static_cast<int64_t*>(shape_tensor->data);
-        const auto& ti = instr.tensor_info;
-        auto shape = std::vector<int64_t>(ti.ndim);
-        shape.assign(dims, dims + ti.ndim);
+        auto shape = std::vector<int64_t>(instr.ndim);
+        shape.assign(dims, dims + instr.ndim);
         auto allocator = MemoryManager::Global()->GetAllocator(ctxs[0]);
-        auto data = NDArray::Empty(shape, ti.dtype, ctxs[0], allocator);
+        auto data = NDArray::Empty(shape, instr.dtype, ctxs[0], allocator);
         auto obj = Object::Tensor(data);
         WriteRegister(instr.dst, obj);
         pc++;
