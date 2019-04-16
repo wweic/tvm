@@ -305,7 +305,7 @@ Expr ToANormalFormAux(const Expr& e,
 }
 
 Expr ToANormalForm(const Expr& e,
-  
+
                    const Module& m,
                    std::unordered_set<GlobalVar, NodeHash, NodeEqual>* gv) {
     RELAY_LOG(INFO)
