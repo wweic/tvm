@@ -1,6 +1,5 @@
 import os
 
-from nose.tools import nottest
 import mxnet as mx
 from mxnet import gluon
 
@@ -162,7 +161,6 @@ def test_tuple_second():
     result = veval(f, (i_data, j_data))
     tvm.testing.assert_allclose(result.asnumpy(), j_data)
 
-# @nottest
 def test_list_constructor():
     def to_list(o):
         if isinstance(o, tvm.relay.backend.interpreter.TensorValue):
