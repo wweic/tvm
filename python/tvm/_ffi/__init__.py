@@ -24,4 +24,3 @@ be used via ctypes function calls.
 Some performance critical functions are implemented by cython
 and have a ctypes fallback implementation.
 """
-
