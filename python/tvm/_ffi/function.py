@@ -30,21 +30,32 @@ try:
     if _FFI_MODE == "ctypes":
         raise ImportError()
     if sys.version_info >= (3, 0):
-        from ._cy3.core import _set_class_function, _set_class_module, _set_obj_function
+        from ._cy3.core import _set_class_function, _set_class_module, _set_class_object
         from ._cy3.core import FunctionBase as _FunctionBase
         from ._cy3.core import ObjectBase as _ObjectBase
         from ._cy3.core import convert_to_tvm_func
     else:
-        from ._cy2.core import _set_class_function, _set_class_module, _set_obj_function
+        from ._cy2.core import _set_class_function, _set_class_module, _set_class_object
         from ._cy2.core import FunctionBase as _FunctionBase
         from ._cy2.core import ObjectBase as _ObjectBase
         from ._cy2.core import convert_to_tvm_func
 except IMPORT_EXCEPT:
     # pylint: disable=wrong-import-position
-    from ._ctypes.function import _set_class_function, _set_class_module, _set_obj_function
+    from ._ctypes.function import _set_class_function, _set_class_module, _set_class_object
     from ._ctypes.function import ObjectBase as _ObjectBase
     from ._ctypes.function import FunctionBase as _FunctionBase
     from ._ctypes.function import convert_to_tvm_func
+
+class Object(_ObjectBase):
+    def to_value(self):
+        raise Exception("fix me")
+        # return _vm._ObjectToValue(self)
+
+    def tag(self):
+        raise Exception("fix me")
+        #return _vm._ObjectTag(self)
+
+_set_class_object(Object)
 
 FunctionHandle = ctypes.c_void_p
 

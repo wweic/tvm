@@ -1,7 +1,7 @@
 # pylint: disable=no-else-return, unidiomatic-typecheck, undefined-variable
 """The interface of expr function exposed from C++."""
 import tvm
-from tvm._ffi.function import _ObjectBase, _set_obj_function
+from tvm._ffi.function import _ObjectBase, _set_class_object
 import numpy as np
 from ..relay import ir_pass
 from ..relay.backend.interpreter import Executor
@@ -17,7 +17,9 @@ class Object(_ObjectBase):
     def tag(self):
         return _vm._ObjectTag(self)
 
-_set_obj_function(Object)
+import pdb; pdb.set_trace()
+
+_set_class_object(Object)
 
 def optimize(expr, mod=None):
     # TODO: We need to move this optimization code into the optimizer/pass manager

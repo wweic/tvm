@@ -275,6 +275,6 @@ def _set_class_function(func_class):
     global _CLASS_FUNCTION
     _CLASS_FUNCTION = func_class
 
-def _set_obj_function(obj_class):
+def _set_class_object(obj_class):
     global _CLASS_OBJECT
     _CLASS_OBJECT = obj_class
