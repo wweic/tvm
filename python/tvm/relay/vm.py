@@ -1,12 +1,12 @@
 # pylint: disable=no-else-return, unidiomatic-typecheck, undefined-variable
 """The interface of expr function exposed from C++."""
 import tvm
+from tvm._ffi.function import Object
 import numpy as np
 from ..relay import ir_pass
 from ..relay.backend.interpreter import Executor
 from ..relay.expr import GlobalVar, Function, var, Call, Expr
 from ..relay.ty import FuncType
-from tvm._ffi.function import Object
 from . import _vm
 
 Object = Object
