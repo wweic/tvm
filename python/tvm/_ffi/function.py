@@ -48,12 +48,14 @@ except IMPORT_EXCEPT:
 
 class Object(_ObjectBase):
     def to_value(self):
-        raise Exception("fix me")
-        # return _vm._ObjectToValue(self)
+        # fix me
+        from ..relay import _vm
+        return _vm._ObjectToValue(self)
 
     def tag(self):
-        raise Exception("fix me")
-        #return _vm._ObjectTag(self)
+        # fix me
+        from ..relay import _vm
+        return _vm._ObjectTag(self)
 
 _set_class_object(Object)
 
