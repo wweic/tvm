@@ -1,6 +1,6 @@
 import os
 
-from nose.tools import nottest
+# from nose.tools import nottest
 import mxnet as mx
 from mxnet import gluon
 
@@ -162,7 +162,7 @@ def test_tuple_second():
     result = veval(f, (i_data, j_data))
     tvm.testing.assert_allclose(result.asnumpy(), j_data)
 
-@nottest
+# @nottest
 def test_list_constructor():
     def to_list(o):
         if isinstance(o, tvm.relay.backend.interpreter.TensorValue):
@@ -234,16 +234,16 @@ def test_closure():
     tvm.testing.assert_allclose(res.asnumpy(), 3.0)
 
 if __name__ == "__main__":
-    test_id()
-    test_op()
+    # test_id()
+    # test_op()
     test_cond()
-    test_simple_if()
-    test_simple_call()
-    test_count_loop()
-    test_sum_loop()
-    test_tuple_fst()
-    test_tuple_second()
-    test_let_scalar()
-    test_let_tensor()
+    # test_simple_if()
+    # test_simple_call()
+    # test_count_loop()
+    # test_sum_loop()
+    # test_tuple_fst()
+    # test_tuple_second()
+    # test_let_scalar()
+    # test_let_tensor()
     # test_rnn()
-    test_closure()
+    #test_closure()

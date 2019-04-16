@@ -37,6 +37,12 @@ struct PrimitiveInliner : ExprMutator {
         // they point to a primitive function.
         const VarNode* var_node;
 
+        // Collapse a chain of let bindings
+        //
+        // let x = fn (..) { .. };
+        // let y = x
+        // let w = y
+        // in w(...)
         while ((var_node = op.as<VarNode>())) {
             auto var = GetRef<Var>(var_node);
             RELAY_LOG(INFO) << "Var: " << var << std::endl;
@@ -58,14 +64,6 @@ struct PrimitiveInliner : ExprMutator {
             }
         }
 
-        if (auto global = op.as<GlobalVarNode>()) {
-            return CallNode::make(
-                GetRef<GlobalVar>(global),
-                call->args,
-                call->attrs,
-                call->type_args);
-        }
-
         return ExprMutator::VisitExpr_(call);
     }
 
@@ -78,19 +76,21 @@ struct PrimitiveInliner : ExprMutator {
     }
 
     Function Inline(const Function& func) {
-        RELAY_LOG(INFO) << "Inline "
+        RELAY_LOG(INFO) << "Before inlining primitives: "
             << std::endl
             << "func= " << AsText(func, false)
             << std::endl;
 
         auto inlined = FunctionNode::make(
             func->params,
-            DeadCodeElimination(VisitExpr(func->body)),
+            VisitExpr(func->body),
             func->ret_type,
             func->type_params,
             func->attrs);
 
-        RELAY_LOG(INFO) << "Inline "
+        inlined = Downcast<Function>(DeadCodeElimination(inlined));
+
+        RELAY_LOG(INFO) << "After inlining primitives"
             << std::endl
             << "after_func= " << AsText(inlined, false)
             << std::endl;;

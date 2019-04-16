@@ -379,7 +379,8 @@ struct VMCompiler : ExprFunctor<void(const Expr& expr)> {
 
       for (auto arg : call_node->args) {
         CHECK(arg.as<VarNode>())
-          << "found: " << AsText(arg, false);
+          << "found: " << AsText(arg, false)
+          << std::endl << arg;
         this->VisitExpr(arg);
         args_registers.push_back(last_register);
       }
