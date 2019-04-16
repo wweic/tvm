@@ -159,7 +159,7 @@ class TypeInferencer : private ExprFunctor<Type(const Expr&)>,
       if (auto* ft2 = t2.as<FuncTypeNode>()) {
         second = InstantiateFuncType(ft2);
       }
-      return solver_.Unify(t1, t2, expr, arg_type);
+      return solver_.Unify(ExpandTypeOf(t1), ExpandTypeOf(t2), expr, arg_type);
     } catch (const dmlc::Error &e) {
       this->ReportFatalError(
         expr,
