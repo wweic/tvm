@@ -243,5 +243,5 @@ if __name__ == "__main__":
     test_tuple_second()
     test_let_scalar()
     test_let_tensor()
-    test_rnn()
+    test_list_constructor()
     test_closure()
