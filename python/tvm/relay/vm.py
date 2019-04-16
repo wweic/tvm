@@ -9,18 +9,6 @@ from ..relay.expr import GlobalVar, Function, var, Call, Expr
 from ..relay.ty import FuncType
 from . import _vm
 
-
-class Object(_ObjectBase):
-    def to_value(self):
-        return _vm._ObjectToValue(self)
-
-    def tag(self):
-        return _vm._ObjectTag(self)
-
-import pdb; pdb.set_trace()
-
-_set_class_object(Object)
-
 def optimize(expr, mod=None):
     # TODO: We need to move this optimization code into the optimizer/pass manager
     ck_expr = ir_pass.infer_type(expr, mod=mod)

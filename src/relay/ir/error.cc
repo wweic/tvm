@@ -106,10 +106,6 @@ void ErrorReporter::RenderErrors(const Module& module, bool use_color) {
       std::endl <<
       rang::style::reset;
 
-    for (auto pair : err_map) {
-      std::cout << "Key: " << pair.first << std::endl << " Value: " << pair.second << std::endl;
-    }
-
     // We then call into the Relay printer to generate the program.
     //
     // The annotation callback will annotate the error messages
