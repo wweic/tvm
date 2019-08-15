@@ -312,6 +312,8 @@ class Interpreter :
 
   Array<Shape> ComputeDynamicShape(const Function& func,
                                    const Array<Value>& args) {
+
+    std::cout << "Computing Shape " << func << "\n";
     auto key = CCacheKeyNode::make(func, Target::Create("llvm"));
     auto cfunc = engine_->LowerShapeFunc(key);
     size_t arity = cfunc->inputs.size() + cfunc->outputs.size();

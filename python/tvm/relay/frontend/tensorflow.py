@@ -24,7 +24,13 @@ from collections import defaultdict
 # Numpy support
 import numpy as np
 
+import pdb 
+
 import tvm
+
+from tvm.relay.prelude import Prelude
+from topi.util import get_const_tuple
+
 from .. import analysis
 from .. import expr as _expr
 from .. import op as _op
@@ -506,6 +512,69 @@ def _pack():
         return _op.concatenate(inputs_reshaped, axis)
     return _impl
 
+def _tensor_array():
+    def _impl(inputs, attr, params, prelude):
+        return prelude.tensor_array(_op.take(inputs[0], tvm.relay.const(0)))
+    return _impl
+
+def _tensor_array_scatter():
+    def _impl(inputs, attr, params, prelude):
+        values = None
+        import pdb
+        # pdb.set_trace()
+        if len(inputs[2].type_annotation.shape) == 1:
+            pass
+        elif len(inputs[2].type_annotation.shape) == 2:
+            values = prelude.tensor_array_unstack_tensor2(inputs[2])
+
+        return prelude.tensor_array_scatter(inputs[0], inputs[1], values)
+    return _impl
+
+def _tensor_array_gather():
+    def _impl(inputs, attr, params, prelude):
+        return prelude.tensor_array_gather(inputs[2], inputs[1])
+    return _impl
+
+def _tensor_array_size():
+    def _impl(inputs, attr, params, prelude):
+        return prelude.tensor_array_size(inputs[0])
+    return _impl
+
+def _tensor_array_write():
+    def _impl(inputs, attr, params, prelude):
+        import pdb 
+        # pdb.set_trace()
+        if len(inputs[2].type_annotation.shape) == 2:
+            v = prelude.tensor2(inputs[2])
+        elif len(inputs[2].type_annotation.shape) == 3:
+            v = prelude.tensor3(inputs[2])
+        return prelude.tensor_array_write(inputs[3], _op.take(inputs[1], tvm.relay.const(0)), v)            
+    return _impl
+
+def _tensor_array_read():
+    def _impl(inputs, attr, params, prelude):
+        import pdb 
+        # pdb.set_trace()        
+        return prelude.tensor_array_read(inputs[2], _op.take(inputs[1], tvm.relay.const(0)))
+    return _impl
+
+def _tensor_array_split():
+    def _impl(inputs, attr, params, prelude):
+        import pdb
+        if len(inputs[1].type_annotation.shape) == 2:
+            v = prelude.tensor2(inputs[1])
+        elif len(inputs[1].type_annotation.shape) == 3:
+            v = prelude.tensor3(inputs[1])
+        # pdb.set_trace()
+        lengths = _op.cast(inputs[2], 'int32')
+        return prelude.tensor_array_split(inputs[0], v, lengths)
+    return _impl
+
+def _tensor_array_concat():
+    def _impl(inputs, attr, params, prelude):
+        return prelude.tensor_array_concat(inputs[1])
+    return _impl
+
 def _tile():
     def _impl(inputs, attr, params):
         reps = params[inputs.pop().name_hint].asnumpy()
@@ -968,6 +1037,7 @@ def _rank():
 
 def _range():
     def _impl(inputs, attr, params):
+        pdb.set_trace()
         start = params.pop(inputs[0].name_hint).asnumpy()[0]
         limit = params.pop(inputs[1].name_hint).asnumpy()[0] \
             if hasattr(inputs[1], "name_hint") else params.pop('Rank').asnumpy()[0]
@@ -1285,6 +1355,14 @@ _convert_map = {
     'Neg'                               : AttrCvt('negative'),
     'NotEqual'                          : _broadcast('not_equal'),
     'Pack'                              : _pack(),
+    'TensorArrayV3'                     : _tensor_array(),
+    'TensorArrayScatterV3'              : _tensor_array_scatter(),    
+    'TensorArrayGatherV3'               : _tensor_array_gather(),
+    'TensorArraySizeV3'                 : _tensor_array_size(),
+    'TensorArrayWriteV3'                : _tensor_array_write(),
+    'TensorArrayReadV3'                 : _tensor_array_read(),
+    'TensorArraySplitV3'                : _tensor_array_split(),
+    'TensorArrayConcatV3'               : _tensor_array_concat(),
     'Pad'                               : _pad('Pad'),
     'PadV2'                             : _pad('PadV2'),
     'Pow'                               : _elemwise('power'),
@@ -1830,6 +1908,7 @@ class GraphProto(object):
         self._loops = {}
         self._branches = {}
         self._mod = _module.Module({})
+        self._prelude = Prelude(self._mod)
 
     def from_tensorflow(self, graph, layout="NHWC", shape=None, outputs=None):
         """Construct relay nodes from tensorflow graph definition - GraphDef.
@@ -2306,7 +2385,11 @@ class GraphProto(object):
         if op_name in identity_list:
             sym = get_relay_op(op_name)(*inputs, **attrs)
         elif op_name in convert_map:
-            sym = convert_map[op_name](inputs, attrs, self._params)
+            if 'TensorArray' in op_name:
+                sym = convert_map[op_name](inputs, attrs, self._params, self._prelude)
+            else:
+                sym = convert_map[op_name](inputs, attrs, self._params)
+
         elif op_name in convert_map_rnn:
             sym = self._convert_rnn_operator(op_name, inputs, attrs,
                                              self._params, graph,

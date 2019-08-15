@@ -17,17 +17,63 @@
 # pylint: disable=no-else-return, unidiomatic-typecheck, invalid-name
 """A prelude containing useful global functions and ADT definitions."""
 import os
-from .ty import GlobalTypeVar, TypeVar, FuncType, TupleType, scalar_type
+from .ty import GlobalTypeVar, TensorType, Any, TypeVar, FuncType, TupleType, scalar_type
 from .expr import Var, Function, GlobalVar, Let, If, Tuple, TupleGetItem, const
 from .op.tensor import add, subtract, equal
 from .adt import Constructor, TypeData, Clause, Match
 from .adt import PatternConstructor, PatternVar, PatternWildcard
+from . import op
 from .parser import fromtext
 __PRELUDE_PATH__ = os.path.dirname(os.path.realpath(__file__))
 from .module import Module
 
 class Prelude:
     """Contains standard definitions."""
+
+    def define_tensor_adt(self):
+        """dynamic tensor
+        """
+        self.tensor_t = GlobalTypeVar("tensor_t")
+        tensor0_type = TensorType([])        
+        tensor1_type = TensorType([Any()])
+        tensor2_type = TensorType([Any(), Any()])        
+        tensor3_type = TensorType([Any(), Any(), Any()])                
+        self.tensor_nil = Constructor("tensor_nil", [], self.tensor_t)
+        self.tensor0 = Constructor("tensor0", [tensor0_type], self.tensor_t)
+        self.tensor1 = Constructor("tensor1", [tensor1_type], self.tensor_t)
+        self.tensor2 = Constructor("tensor2", [tensor2_type], self.tensor_t)
+        self.tensor3 = Constructor("tensor3", [tensor3_type], self.tensor_t)
+        self.mod[self.tensor_t] = TypeData(self.tensor_t, [], [self.tensor_nil, self.tensor0, self.tensor1, self.tensor2])
+
+    def define_tensor_add_one(self):
+        self.tensor_add_one = GlobalVar("tensor_add_one")
+        x = Var("x", self.tensor_t())
+        t0 = Var("t0")
+        t1 = Var("t1")
+        t2 = Var("t2")                
+        tensor0_case = Clause(PatternConstructor(self.tensor0, [PatternVar(t0)]), self.tensor1(op.expand_dims(t0, 0, 1)))        
+        tensor1_case = Clause(PatternConstructor(self.tensor1, [PatternVar(t1)]), self.tensor2(op.expand_dims(t1, 0, 1)))
+        tensor2_case = Clause(PatternConstructor(self.tensor2, [PatternVar(t2)]), self.tensor3(op.expand_dims(t2, 0, 1)))
+        self.mod[self.tensor_add_one] = Function([x], Match(x, [tensor0_case, tensor1_case, tensor2_case]))
+
+    def define_tensor_concat(self):
+        self.tensor_concatenate = GlobalVar("tensor_concatenate")
+        x = Var("x", self.tensor_t())
+        y = Var("y", self.tensor_t())        
+
+        t11 = Var("t11")
+        t12 = Var("t12")
+        t21 = Var("t21")
+        t22 = Var("t22")
+        tensor1_case = Clause(PatternConstructor(self.tensor1, [PatternVar(t11)]),
+                              Match(y, [Clause(PatternConstructor(self.tensor1, [PatternVar(t12)]), 
+                                        self.tensor1(op.concatenate([t11, t12], axis=0)) )]
+                                    ))
+        tensor2_case = Clause(PatternConstructor(self.tensor2, [PatternVar(t21)]), 
+                              Match(y, [Clause(PatternConstructor(self.tensor2, [PatternVar(t22)]), 
+                                        self.tensor2(op.concatenate([t21, t22], axis=0)) )]
+                                    ))
+        self.mod[self.tensor_concatenate] = Function([x, y], Match(x, [tensor1_case, tensor2_case]))        
 
     def define_list_adt(self):
         """Defines a LISP-style list ADT. An empty list is
@@ -38,6 +84,215 @@ class Prelude:
         self.nil = Constructor("nil", [], self.l)
         self.cons = Constructor("cons", [a, self.l(a)], self.l)
         self.mod[self.l] = TypeData(self.l, [a], [self.nil, self.cons])
+
+    def define_tensor_array(self):
+        self.tensor_array = GlobalVar("tensor_array")
+        n = Var("x", scalar_type('int32'))        
+        body = If(equal(n, const(0)),
+                  self.nil(),
+                  self.cons(self.tensor_nil(), self.tensor_array(subtract(n, const(1)))))
+        self.mod[self.tensor_array] = Function([n], body, self.l(self.tensor_t()), [])
+
+    def define_tensor_array_read(self):
+        self.tensor_array_read = GlobalVar("tensor_array_read")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        n = Var("x", scalar_type('int32'))
+        self.mod[self.tensor_array_read] = Function([tensor_array, n], self.nth(tensor_array, n), self.tensor_t(), [])
+
+    def define_tensor_array_size(self):
+        self.tensor_array_size = GlobalVar("tensor_array_size")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        self.mod[self.tensor_array_size] = Function([tensor_array], self.length(tensor_array), scalar_type('int32'), [])
+
+    def define_tensor_array_write(self):
+        self.tensor_array_write = GlobalVar("tensor_array_write")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        n = Var("x", scalar_type('int32'))
+        v = Var("v", self.tensor_t())
+        self.mod[self.tensor_array_write] = Function([tensor_array, n, v], self.update(tensor_array, n, v), self.l(self.tensor_t()), [])
+
+    def define_tensor_array_stack(self):
+        self.tensor_array_stack = GlobalVar("tensor_array_stack")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        tensor_array_add_one = self.map(self.tensor_add_one, tensor_array)
+        tensors = self.foldl(self.tensor_concatenate, self.hd(tensor_array_add_one), self.tl(tensor_array_add_one))
+        self.mod[self.tensor_array_stack] = Function([tensor_array], tensors, self.tensor_t(), [])
+
+    def define_tensor_array_unstack_tensor1(self):
+        self.tensor_array_unstack_tensor1_helper = GlobalVar("tensor_array_unstack_tensor1_helper")        
+        tensor = Var("t", TensorType([Any()]))        
+        up = Var("up", scalar_type('int32'))
+        i = Var("i", scalar_type('int32'))        
+
+        helper_body = If(equal(i, up), self.nil(), self.cons(self.tensor0(op.take(tensor, i)), 
+            self.tensor_array_unstack_tensor1_helper(add(i, const(1)), up, tensor))
+                         )
+        self.mod[self.tensor_array_unstack_tensor1_helper] = Function([i, up, tensor], helper_body, self.l(self.tensor_t()), [])
+
+        self.tensor_array_unstack_tensor1 = GlobalVar("tensor_array_unstack_tensor1")
+        tensor1 = Var("tensor", TensorType([Any()]))
+        shape = op.shape_of(tensor1)
+        ndim = op.take(shape, const(0))
+        self.mod[self.tensor_array_unstack_tensor1] = Function([tensor1], self.tensor_array_unstack_tensor1_helper(const(0), ndim, tensor1), 
+            self.l(self.tensor_t()), [])
+
+    def define_tensor_array_unstack_tensor2(self):
+        self.tensor_array_unstack_tensor2_helper = GlobalVar("tensor_array_unstack_tensor2_helper")
+        tensor = Var("t", TensorType([Any(), Any()]))
+        up = Var("up", scalar_type('int32'))
+        i = Var("i", scalar_type('int32'))
+
+        helper_body = If(equal(i, up),
+                         self.nil(),
+                         self.cons(self.tensor1(op.take(tensor, i, axis=0)),
+                                   self.tensor_array_unstack_tensor2_helper(
+                                       add(i, const(1)), up, tensor)))
+        self.mod[self.tensor_array_unstack_tensor2_helper] = Function([i, up, tensor], helper_body, self.l(self.tensor_t()), [])
+
+        self.tensor_array_unstack_tensor2 = GlobalVar("tensor_array_unstack_tensor2")
+        tensor2 = Var("tensor", TensorType([Any(), Any()]))
+        shape = op.shape_of(tensor2)
+        ndim = op.take(shape, const(0))
+        self.mod[self.tensor_array_unstack_tensor2] = Function([tensor2], self.tensor_array_unstack_tensor2_helper(const(0), ndim, tensor2),
+            self.l(self.tensor_t()), [])
+        
+        print(self.mod[self.tensor_array_unstack_tensor2].astext())
+        print(self.mod[self.tensor_array_unstack_tensor2_helper].astext())
+
+    def define_tensor_array_scatter(self):
+        self.tensor_array_scatter_helper = GlobalVar("tensor_array_scatter_helper")
+        ta = Var("ta", self.l(self.tensor_t()))
+        current = Var("current", scalar_type('int32'))
+        limit = Var("limit", scalar_type('int32'))
+        indices_ = Var('indices_', TensorType([Any()], 'int32'))
+        values_ = Var('values_', self.l(self.tensor_t()))
+
+        helper_body = If(equal(current, limit),
+                         ta,
+                         self.tensor_array_scatter_helper(
+                             self.tensor_array_write(ta, op.take(indices_, current), self.tensor_array_read(values_, current)),
+                             add(current, const(1)),
+                             limit, indices_, values_))
+
+        self.mod[self.tensor_array_scatter_helper] = Function([ta, current, limit, indices_, values_], helper_body, self.l(self.tensor_t()), [])
+
+        self.tensor_array_scatter = GlobalVar("tensor_array_scatter")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        indices = Var('indices', TensorType([Any()], 'int32'))
+        values = Var('values', self.l(self.tensor_t()))
+
+        indices_shape = op.shape_of(indices)
+        limit = op.take(indices_shape, const(0))
+        body = self.tensor_array_scatter_helper(tensor_array, const(0), limit, indices, values)
+        self.mod[self.tensor_array_scatter] = Function([tensor_array, indices, values], body, self.l(self.tensor_t()), [])
+
+    def define_tensor_array_gather(self):
+        self.tensor_array_gather_helper = GlobalVar("tensor_array_gather_helper")
+        ta = Var("ta", self.l(self.tensor_t()))
+        accu = Var("accu", self.l(self.tensor_t()))        
+        current = Var("current", scalar_type('int32'))
+        limit = Var("limit", scalar_type('int32'))
+        indices_ = Var('indices_', TensorType([Any()], 'int32'))
+
+        helper_body = If(equal(current, const(0)),
+                         self.tensor_array_stack(accu),
+                         self.tensor_array_gather_helper(
+                             ta,
+                             self.cons(self.tensor_array_read(ta, op.take(indices_, subtract(current, const(1)))), accu),
+                             subtract(current, const(1)),
+                             limit, indices_))
+
+        self.mod[self.tensor_array_gather_helper] = \
+            Function([ta, accu, current, limit, indices_], helper_body, self.tensor_t(), [])
+
+        self.tensor_array_gather = GlobalVar("tensor_array_gather")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        indices = Var('indices', TensorType([Any()], 'int32'))
+
+        indices_shape = op.shape_of(indices)
+        limit = op.take(indices_shape, const(0))
+        body = self.tensor_array_gather_helper(tensor_array, self.nil(), limit, limit, indices)
+        self.mod[self.tensor_array_gather] = Function([tensor_array, indices], body, self.tensor_t(), [])
+
+    def define_tensor_take(self):
+        self.tensor_take = GlobalVar('tensor_take')
+        t = Var('tensor', self.tensor_t())
+        lower = Var('lower', scalar_type('int32'))
+        upper = Var('upper', scalar_type('int32'))
+
+        t1 = Var('t1')
+        t2 = Var('t2')
+        t3 = Var('t3')
+        tensor1_case = Clause(PatternConstructor(self.tensor1, [PatternVar(t1)]), self.tensor1(op.take(t1, op.arange(lower, upper, dtype='int32')))
+                              )
+        tensor2_case = Clause(PatternConstructor(self.tensor2, [PatternVar(t2)]), self.tensor2(op.take(t2, op.arange(lower, upper, dtype='int32'), axis=0))
+                              )
+        tensor3_case = Clause(PatternConstructor(self.tensor3, [PatternVar(t3)]), self.tensor3(op.take(t3, op.arange(lower, upper, dtype='int32'), axis=0))
+                              )
+        self.mod[self.tensor_take] = Function([t, lower, upper], Match(t, [tensor1_case, tensor2_case, tensor3_case]), self.tensor_t(), [])
+
+    def define_tensor_array_split(self):
+        self.tensor_array_split_helper = GlobalVar('ta_split_helper')
+        ta1 = Var("tensor_array", self.l(self.tensor_t()))
+        value1 = Var('value1', self.tensor_t())
+        offset1 = Var('offset1', scalar_type('int32'))
+        current1 = Var('current1', scalar_type('int32'))
+        limit1 = Var('limit1', scalar_type('int32'))
+        lengths1 = Var('lengths', TensorType([Any()], 'int32'))
+
+        helper1_body = If(equal(current1, limit1),
+                          ta1,
+                          self.tensor_array_write(
+                              self.tensor_array_split_helper(
+                                  ta1,
+                                  value1,
+                                  add(offset1, op.take(lengths1, current1)),
+                                  add(current1, const(1)),
+                                  limit1,
+                                  lengths1
+                              ),
+                              current1,
+                              self.tensor_take(value1,
+                                               offset1,
+                                               add(
+                                                 op.take(lengths1, current1),
+                                                 offset1)
+                          )))
+        self.mod[self.tensor_array_split_helper] = \
+            Function([ta1, value1, offset1, current1, limit1, lengths1], helper1_body, self.l(self.tensor_t()), [])
+
+
+        self.tensor_array_split = GlobalVar("tensor_array_split")
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        value = Var('value', self.tensor_t())
+        lengths = Var('lengths', TensorType([Any()], 'int32'))
+
+        lengths_shape = op.shape_of(lengths)
+        lengths_limit = op.take(lengths_shape, const(0))
+        body = self.tensor_array_split_helper(
+            tensor_array,
+            value,
+            const(0),
+            const(0),
+            lengths_limit,
+            lengths)
+        self.mod[self.tensor_array_split] = Function([tensor_array, value, lengths], body, self.l(self.tensor_t()), [])
+
+    def define_tensor_array_concat(self):
+        self.tensor_array_concat = GlobalVar('tensor_array_concat')
+        tensor_array = Var("tensor_array", self.l(self.tensor_t()))
+        hd = Var("hd")
+        tl = Var("tl")
+
+        nil_case = Clause(PatternConstructor(self.nil), self.tensor_nil())
+        cons_case = Clause(PatternConstructor(self.cons, [PatternVar(hd), PatternVar(tl)]),
+                           Match(tl, [
+                               Clause(PatternConstructor(self.nil), hd),
+                               Clause(PatternWildcard(), self.tensor_concatenate(hd, self.tensor_array_concat(tl)))
+                           ], False)
+                           )
+
+        self.mod[self.tensor_array_concat] = Function([tensor_array], Match(tensor_array, [nil_case, cons_case], False), self.tensor_t(), [])
 
     def define_list_hd(self):
         """Defines a function to get the head of a list. Assume the list has at least one
@@ -519,3 +774,19 @@ class Prelude:
         self.define_tree_size()
 
         self.define_iterate()
+
+        self.define_tensor_adt()
+        self.define_tensor_take()
+        self.define_tensor_add_one()
+        self.define_tensor_concat()
+        self.define_tensor_array()
+        self.define_tensor_array_read()
+        self.define_tensor_array_size()
+        self.define_tensor_array_write()        
+        self.define_tensor_array_stack()
+        self.define_tensor_array_unstack_tensor1()
+        self.define_tensor_array_unstack_tensor2()
+        self.define_tensor_array_scatter()
+        self.define_tensor_array_gather()
+        self.define_tensor_array_split()
+        self.define_tensor_array_concat()

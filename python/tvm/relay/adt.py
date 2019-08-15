@@ -186,7 +186,7 @@ class Clause(NodeBase):
 class Match(Expr):
     """Pattern matching expression in Relay."""
 
-    def __init__(self, data, clauses, complete=True):
+    def __init__(self, data, clauses, complete=False):
         """Construct a Match.
 
         Parameters

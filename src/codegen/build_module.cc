@@ -429,6 +429,7 @@ Array<LoweredFunc> lower(Schedule sch,
                          const BuildConfig& config) {
   Array<NodeRef> out_arg_list;
   auto stmt = BuildStmt(sch, args, binds, true, &out_arg_list, config);
+  std::cout << "lower func:" << stmt << "\n";
   return Array<LoweredFunc>({ ir::MakeAPI(stmt, name, out_arg_list, 0, config->restricted_func) });
 }
 
