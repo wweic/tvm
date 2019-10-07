@@ -21,6 +21,7 @@ The Relay Virtual Machine profiler.
 Provides extra APIs for profiling vm execution.
 """
 import tvm
+from tvm import autotvm
 from . import vm, _vm
 
 def _update_target(target):
@@ -49,8 +50,9 @@ class VMCompilerProfiler(vm.VMCompiler):
         self.mod = _vm._VMCompilerProfiler()
         self._compile = self.mod["compile"]
         self._get_vm = self.mod["get_vm"]
+        self._set_params_func = self.mod["set_params"]
 
-    def compile(self, mod, target=None, target_host=None):
+    def compile(self, mod, target=None, target_host=None, params=None):
         """
         Parameters
         ----------
@@ -71,13 +73,38 @@ class VMCompilerProfiler(vm.VMCompiler):
             By default, llvm is used if it is enabled,
             otherwise a stackvm intepreter is used.
 
+        params : dict of str to NDArray
+            Input parameters to the graph that do not change
+            during inference time. Used for constant folding.
+
         Returns
         -------
         vm : VirtualMachineProfiler
             The profile VM runtime.
         """
         target = _update_target(target)
-        self._compile(mod, target, target_host)
+        if params:
+            self.set_params(params)
+
+        target_host = None if target_host == "" else target_host
+        if not target_host:
+            for device_type, tgt in target.items():
+                if device_type.value == tvm.nd.cpu(0).device_type:
+                    target_host = tgt
+                    break
+        if not target_host:
+            target_host = "llvm" if tvm.module.enabled("llvm") else "stackvm"
+        target_host = tvm.target.create(target_host)
+
+        # If current dispatch context is fallback context (the default root context),
+        # then load pre-tuned parameters from TopHub
+        if isinstance(autotvm.DispatchContext.current, autotvm.FallbackContext):
+            tophub_context = autotvm.tophub.context(list(target.values()))
+        else:
+            tophub_context = autotvm.util.EmptyContext()
+
+        with tophub_context:
+            self._compile(mod, target, target_host)
         return VirtualMachineProfiler(self._get_vm())
 
 class VirtualMachineProfiler(vm.VirtualMachine):

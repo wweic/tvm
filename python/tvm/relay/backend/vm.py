@@ -25,6 +25,7 @@ import numpy as np
 import tvm
 from tvm import autotvm
 from tvm._ffi.runtime_ctypes import TVMByteArray
+from tvm.relay import expr as _expr
 from . import _vm
 from . import vmobj as _obj
 from .interpreter import Executor
@@ -150,8 +151,17 @@ class VMCompiler(object):
         self.mod = _vm._VMCompiler()
         self._compile = self.mod["compile"]
         self._get_vm = self.mod["get_vm"]
+        self._set_params_func = self.mod["set_params"]
 
-    def compile(self, mod, target=None, target_host=None):
+    def set_params(self, params):
+        inputs = {}
+        for name, param in params.items():
+            if isinstance(param, np.ndarray):
+                param = _nd.array(param)
+            inputs[name] = _expr.const(param)
+        self._set_params_func(inputs)
+
+    def compile(self, mod, target=None, target_host=None, params=None):
         """
         Parameters
         ----------
@@ -172,6 +182,10 @@ class VMCompiler(object):
             By default, llvm is used if it is enabled,
             otherwise a stackvm intepreter is used.
 
+        params : dict of str to NDArray
+            Input parameters to the graph that do not change
+            during inference time. Used for constant folding.
+
         Returns
         -------
         vm : VirtualMachine
@@ -187,6 +201,9 @@ class VMCompiler(object):
         if not target_host:
             target_host = "llvm" if tvm.module.enabled("llvm") else "stackvm"
         target_host = tvm.target.create(target_host)
+
+        if params:
+            self.set_params(params)
 
         # If current dispatch context is fallback context (the default root context),
         # then load pre-tuned parameters from TopHub

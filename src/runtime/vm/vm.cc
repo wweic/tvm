@@ -589,18 +589,9 @@ PackedFunc VirtualMachine::GetFunction(const std::string& name,
                              });
 
       CHECK(it != functions.end()) << "Cannot find function " << func_name << "\n";
-      CHECK_EQ(func_args.size() + params_.size(), it->params.size())
+      CHECK_EQ(func_args.size(), it->params.size())
           << "The number of provided parameters doesn't match the number of arguments"
           << "\n";
-      if (!params_.empty()) {
-        for (const auto& p : it->params) {
-          const auto& pit = params_.find(p);
-          if (pit != params_.end()) {
-            func_args.push_back(pit->second);
-          }
-        }
-        CHECK_EQ(func_args.size(), it->params.size());
-      }
       *rv = this->Invoke(func_name, func_args);
     });
   } else if (name == "init") {
