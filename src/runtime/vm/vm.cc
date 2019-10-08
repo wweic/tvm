@@ -688,7 +688,14 @@ Object VirtualMachine::Invoke(const VMFunction& func, const std::vector<Object>&
   DLOG(INFO) << "Executing Function: " << std::endl << func;
 
   InvokeGlobal(func, args);
+  auto op_begin = std::chrono::high_resolution_clock::now();  
   RunLoop();
+  auto op_end = std::chrono::high_resolution_clock::now();  
+  double op_duration =
+      std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count();
+  std::cout << "RunLoop duration : " << op_duration << " us\n";
   auto alloc = MemoryManager::Global()->GetAllocator(ctxs[0]);
   DLOG(INFO) << "Memory used: " << alloc->UsedMemory() << " B";
   return return_register;
@@ -892,6 +899,7 @@ void VirtualMachine::RunLoop() {
         goto main_loop;
       }
       case Opcode::AllocTensor: {
+        auto op_begin = std::chrono::high_resolution_clock::now();  
         auto shape = std::vector<int64_t>(instr.alloc_tensor.ndim);
         for (uint32_t i = 0; i < instr.alloc_tensor.ndim; ++i) {
           shape[i] = instr.alloc_tensor.shape[i];
@@ -901,9 +909,16 @@ void VirtualMachine::RunLoop() {
         auto obj = Object::Tensor(data);
         WriteRegister(instr.dst, obj);
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count();
+        std::cout << "AllocTensor duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::AllocTensorReg: {
+        auto op_begin = std::chrono::high_resolution_clock::now();          
         DLContext cpu_ctx;
         cpu_ctx.device_type = kDLCPU;
         cpu_ctx.device_id = 0;
@@ -920,6 +935,12 @@ void VirtualMachine::RunLoop() {
         auto obj = Object::Tensor(data);
         WriteRegister(instr.dst, obj);
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count();
+        std::cout << "AllocTensorReg duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::AllocDatatype: {
