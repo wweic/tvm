@@ -784,6 +784,9 @@ void VirtualMachine::RunLoop() {
   CHECK(this->code);
   this->pc = 0;
   Index frame_start = frames.size();
+  double alloc_tensor = 0.0;
+  double alloc_tensor_reg = 0.0;
+
   while (true) {
   main_loop:
     auto const& instr = this->code[this->pc];
@@ -976,7 +979,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "AllocTensor duration " << op_duration << "\n";
+        alloc_tensor += op_duration;
         goto main_loop;
       }
       case Opcode::AllocTensorReg: {
@@ -1002,7 +1005,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "AllocTensorReg duration " << op_duration << "\n";
+        alloc_tensor_reg += op_duration;
         goto main_loop;
       }
       case Opcode::AllocDatatype: {
@@ -1055,6 +1058,9 @@ void VirtualMachine::RunLoop() {
       }
     }
   }
+
+  std::cout << "AllocTensor duration " << alloc_tensor << "\n";
+  std::cout << "AllocTensorReg duration " << alloc_tensor_reg << "\n";
 }
 
 }  // namespace vm
