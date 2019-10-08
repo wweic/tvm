@@ -786,6 +786,17 @@ void VirtualMachine::RunLoop() {
   Index frame_start = frames.size();
   double alloc_tensor = 0.0;
   double alloc_tensor_reg = 0.0;
+  double move = 0.0;
+  double load_const = 0.0;
+  double load_consti = 0.0;
+  double invoke = 0.0;
+  double invoke_packed = 0.0;
+  double invoke_closure = 0.0;
+  double alloc_data = 0.0;
+  double alloc_closure = 0.0;
+  double get_field = 0.0;
+  double get_tag = 0.0;
+  double ifi = 0.0;
 
   while (true) {
   main_loop:
@@ -807,7 +818,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "Move duration " << op_duration << "\n";
+        move += op_duration;
         goto main_loop;
       }
       case Opcode::Fatal: {
@@ -824,7 +835,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "LoadConst duration " << op_duration << "\n";
+        load_const += op_duration;
         goto main_loop;
       }
       case Opcode::LoadConsti: {
@@ -838,7 +849,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "loadConsti duration " << op_duration << "\n";
+        load_consti += op_duration;
         goto main_loop;
       }
       case Opcode::Invoke: {
@@ -854,7 +865,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "Invoke duration " << op_duration << "\n";
+        invoke += op_duration;
         goto main_loop;
       }
       case Opcode::InvokePacked: {
@@ -876,7 +887,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "InvokePacked duration " << op_duration << "\n";
+        invoke_packed += op_duration;
         goto main_loop;
       }
       case Opcode::InvokeClosure: {
@@ -897,7 +908,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "InvokeClosure duration " << op_duration << "\n";
+        invoke_closure += op_duration;
         goto main_loop;
       }
       case Opcode::GetField: {
@@ -915,7 +926,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "GetField duration " << op_duration << "\n";
+        get_field += op_duration;
         goto main_loop;
       }
       case Opcode::GetTag: {
@@ -936,7 +947,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "GetTag duration " << op_duration << "\n";
+        get_tag += op_duration;
         goto main_loop;
       }
       case Opcode::Goto: {
@@ -960,7 +971,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "If duration " << op_duration << "\n";
+        ifi += op_duration;
         goto main_loop;
       }
       case Opcode::AllocTensor: {
@@ -1022,7 +1033,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "AllocDatatype duration " << op_duration << "\n";
+        alloc_data += op_duration;
         goto main_loop;
       }
       case Opcode::AllocClosure: {
@@ -1038,7 +1049,7 @@ void VirtualMachine::RunLoop() {
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
           .count() * 1e6;
-        std::cout << "AllocClosure duration " << op_duration << "\n";
+        alloc_closure += op_duration;
         goto main_loop;
       }
       case Opcode::Ret: {
@@ -1051,6 +1062,18 @@ void VirtualMachine::RunLoop() {
         if (PopFrame() == frame_start) {
           std::cout << "AllocTensor duration " << alloc_tensor << "\n";
           std::cout << "AllocTensorReg duration " << alloc_tensor_reg << "\n";
+          std::cout << "move duration : "  << move << "\n";
+          std::cout << "load const duration : "  << load_const << "\n";
+          std::cout << "load consti duration : "  << load_consti << "\n";
+          std::cout << "invoke duration : "  << invoke << "\n";
+          std::cout << "invoke packed duration : "  << invoke_packed << "\n";
+          std::cout << "invoke closure duration : "  << invoke_closure << "\n";
+          std::cout << "alloc data duration : "  << alloc_data << "\n";
+          std::cout << "alloc closure duration : "  << alloc_closure << "\n";
+          std::cout << "get field duration : "  << get_field << "\n";
+          std::cout << "get tag duration : "  << get_tag << "\n";
+          std::cout << "ifi duration : "  << ifi << "\n";
+
           return;
           // Otherwise we are just returning from a local call.
         } else {
