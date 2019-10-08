@@ -1049,6 +1049,8 @@ void VirtualMachine::RunLoop() {
         auto caller_return_register = frames.back().caller_return_register;
 
         if (PopFrame() == frame_start) {
+          std::cout << "AllocTensor duration " << alloc_tensor << "\n";
+          std::cout << "AllocTensorReg duration " << alloc_tensor_reg << "\n";
           return;
           // Otherwise we are just returning from a local call.
         } else {
@@ -1059,8 +1061,6 @@ void VirtualMachine::RunLoop() {
     }
   }
 
-  std::cout << "AllocTensor duration " << alloc_tensor << "\n";
-  std::cout << "AllocTensorReg duration " << alloc_tensor_reg << "\n";
 }
 
 }  // namespace vm
