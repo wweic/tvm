@@ -794,39 +794,68 @@ void VirtualMachine::RunLoop() {
 
     switch (instr.op) {
       case Opcode::Move: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         Object from_obj;
         from_obj = ReadRegister(instr.from);
         WriteRegister(instr.dst, from_obj);
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "Move duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::Fatal: {
         throw std::runtime_error("VM encountered fatal error");
       }
       case Opcode::LoadConst: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         auto constant_obj = this->constants[instr.const_index];
         auto device_obj = CopyTo(constant_obj, ctxs[0]);
         WriteRegister(instr.dst, device_obj);
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "LoadConst duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::LoadConsti: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         auto tensor = NDArray::Empty({1}, {kDLInt, 64, 1}, {kDLCPU, 0});
         reinterpret_cast<int64_t*>(tensor->data)[0] = instr.load_consti.val;
         WriteRegister(instr.dst, Object::Tensor(tensor));
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "loadConsti duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::Invoke: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         std::vector<Object> args;
         for (Index i = 0; i < instr.num_args; ++i) {
           args.push_back(ReadRegister(instr.invoke_args_registers[i]));
         }
         InvokeGlobal(this->functions[instr.func_index], args);
         frames.back().caller_return_register = instr.dst;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "Invoke duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::InvokePacked: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         const auto& func = packed_funcs[instr.packed_index];
         const auto& arity = instr.arity;
         std::vector<Object> args;
@@ -839,9 +868,16 @@ void VirtualMachine::RunLoop() {
                         args[instr.arity - instr.output_size + i]);
         }
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "InvokePacked duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::InvokeClosure: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         auto object = ReadRegister(instr.closure);
         const auto& closure = object.AsClosure();
         std::vector<Object> args;
@@ -853,9 +889,16 @@ void VirtualMachine::RunLoop() {
         }
         InvokeGlobal(this->functions[closure->func_index], args);
         frames.back().caller_return_register = instr.dst;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "InvokeClosure duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::GetField: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         auto object = ReadRegister(instr.object);
         CHECK(object->tag == ObjectTag::kDatatype)
             << "Object is not data type object, register " << instr.object << ", Object tag "
@@ -864,9 +907,16 @@ void VirtualMachine::RunLoop() {
         auto field = tuple->fields[instr.field_index];
         WriteRegister(instr.dst, field);
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "GetField duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::GetTag: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         auto object = ReadRegister(instr.get_tag.object);
         CHECK(object->tag == ObjectTag::kDatatype)
             << "Object is not data type object, register "
@@ -878,6 +928,12 @@ void VirtualMachine::RunLoop() {
         reinterpret_cast<int32_t*>(tag_tensor->data)[0] = tag;
         WriteRegister(instr.dst, Object::Tensor(tag_tensor));
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "GetTag duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::Goto: {
@@ -885,6 +941,7 @@ void VirtualMachine::RunLoop() {
         goto main_loop;
       }
       case Opcode::If: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         int32_t test_val = LoadScalarInt(instr.if_op.test);
         int32_t target_val = LoadScalarInt(instr.if_op.target);
 
@@ -895,7 +952,12 @@ void VirtualMachine::RunLoop() {
           CHECK_NE(instr.if_op.false_offset, 0);
           pc += instr.if_op.false_offset;
         }
-
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "If duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::AllocTensor: {
@@ -944,6 +1006,7 @@ void VirtualMachine::RunLoop() {
         goto main_loop;
       }
       case Opcode::AllocDatatype: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         std::vector<Object> fields;
         for (Index i = 0; i < instr.num_fields; ++i) {
           fields.push_back(ReadRegister(instr.datatype_fields[i]));
@@ -951,15 +1014,28 @@ void VirtualMachine::RunLoop() {
         Object obj = Object::Datatype(instr.constructor_tag, fields);
         WriteRegister(instr.dst, obj);
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "AllocDatatype duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::AllocClosure: {
+        auto op_begin = std::chrono::high_resolution_clock::now();
         std::vector<Object> free_vars;
         for (Index i = 0; i < instr.num_freevar; i++) {
           free_vars.push_back(ReadRegister(instr.free_vars[i]));
         }
         WriteRegister(instr.dst, Object::Closure(instr.func_index, free_vars));
         pc++;
+        auto op_end = std::chrono::high_resolution_clock::now();
+        double op_duration =
+          std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
+                                                                 op_begin)
+          .count() * 1e6;
+        std::cout << "AllocClosure duration " << op_duration << "\n";
         goto main_loop;
       }
       case Opcode::Ret: {
