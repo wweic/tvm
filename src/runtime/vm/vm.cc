@@ -694,7 +694,7 @@ Object VirtualMachine::Invoke(const VMFunction& func, const std::vector<Object>&
   double op_duration =
       std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
-          .count();
+          .count() * 1e6;
   std::cout << "RunLoop duration : " << op_duration << " us\n";
   auto alloc = MemoryManager::Global()->GetAllocator(ctxs[0]);
   DLOG(INFO) << "Memory used: " << alloc->UsedMemory() << " B";
@@ -913,7 +913,7 @@ void VirtualMachine::RunLoop() {
         double op_duration =
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
-          .count();
+          .count() * 1e6;
         std::cout << "AllocTensor duration " << op_duration << "\n";
         goto main_loop;
       }
@@ -939,7 +939,7 @@ void VirtualMachine::RunLoop() {
         double op_duration =
           std::chrono::duration_cast<std::chrono::duration<double> >(op_end -
                                                                  op_begin)
-          .count();
+          .count() * 1e6;
         std::cout << "AllocTensorReg duration " << op_duration << "\n";
         goto main_loop;
       }
