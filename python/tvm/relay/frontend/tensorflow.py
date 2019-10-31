@@ -867,7 +867,7 @@ def _gather_nd():
     return _impl
 
 def _stridedSlice():
-    def _impl(inputs, attr, params):
+    def _impl(inputs, attr, params, mod):
         """Strided Slice.
         Operator description: https://www.tensorflow.org/api_docs/python/tf/strided_slice
         Tensorflow mask validation: https://github.com/tensorflow/tensorflow/blob/master/
@@ -950,7 +950,7 @@ def _stridedSlice():
         if begin_mask or end_mask or ellipsis_mask or new_axis_mask or shrink_axis_mask:
             begin, end, stride, fshape_indices = _transform_mask(stride_dim, ellipsis_mask)
         out = _op.strided_slice(inputs[0], begin=begin, end=end, strides=stride)
-        out_shape = _infer_shape(out)
+        out_shape = _infer_shape(out, mod)
         if not fshape_indices:
             fshape_indices = range(len(out_shape))
 
@@ -2432,6 +2432,8 @@ class GraphProto(object):
         elif op_name in convert_map:
             if 'TensorArray' in op_name:
                 sym = convert_map[op_name](inputs, attrs, self._params, self._prelude)
+            elif 'StridedSlice' in op_name:
+                sym = convert_map[op_name](inputs, attrs, self._params, self._mod)
             else:
                 sym = convert_map[op_name](inputs, attrs, self._params)
 
