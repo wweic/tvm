@@ -681,7 +681,7 @@ class VirtualMachine : public runtime::ModuleNode {
                             Index output_size,
                             const std::vector<ObjectRef>& args);
 
-  virtual ~VirtualMachine() {}
+  virtual ~VirtualMachine();
 
   const char* type_key() const final {
     return "VirtualMachine";

@@ -100,6 +100,7 @@ Allocator* MemoryManager::GetAllocator(TVMContext ctx) {
   if (allocators_.find(ctx) == allocators_.end()) {
     DLOG(INFO) << "New allocator for " << DeviceName(ctx.device_type) << "("
                << ctx.device_id << ")";
+    // std::unique_ptr<Allocator> alloc(new NaiveAllocator(ctx));
     std::unique_ptr<Allocator> alloc(new PooledAllocator(ctx));
     allocators_.emplace(ctx, std::move(alloc));
   }

@@ -50,9 +50,8 @@ class PooledAllocator final : public Allocator {
     size_t size = ((nbytes + page_size_ - 1) / page_size_) * page_size_;
     auto&& it = memory_pool_.find(size);
     if (it != memory_pool_.end() && !it->second.empty()) {
-      auto&& pool = it->second;
-      auto ret = pool.back();
-      pool.pop_back();
+      auto ret = it->second.back();
+      it->second.pop_back();
       return ret;
     }
     Buffer buf;
@@ -75,13 +74,12 @@ class PooledAllocator final : public Allocator {
 
   size_t UsedMemory() const override { return used_memory_.load(std::memory_order_relaxed); }
 
- private:
-  void ReleaseAll() {
+  void ReleaseAll() override {
     std::lock_guard<std::mutex> lock(mu_);
     for (auto const& it : memory_pool_) {
       auto const& pool = it.second;
       for (auto const& buf : pool) {
-        DeviceAPI::Get(buf.ctx)->FreeDataSpace(buf.ctx, buf.data);
+        DeviceAPI::Get(ctx_)->FreeDataSpace(buf.ctx, buf.data);
       }
     }
     memory_pool_.clear();

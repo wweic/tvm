@@ -626,6 +626,13 @@ ObjectRef CopyTo(ObjectRef src, const DLContext& ctx) {
   }
 }
 
+VirtualMachine::~VirtualMachine() {
+  for (auto ctx : ctxs) {
+    auto alloc = MemoryManager::Global()->GetAllocator(ctx);
+    alloc->ReleaseAll();
+  }
+}
+
 PackedFunc VirtualMachine::GetFunction(const std::string& name,
                                        const std::shared_ptr<ModuleNode>& sptr_to_self) {
   if (name == "invoke") {
@@ -644,7 +651,7 @@ PackedFunc VirtualMachine::GetFunction(const std::string& name,
       if (args.size() == 1) {
         if (param_names.size() > 0) {
           auto argit = inputs_.find(func_name);
-          CHECK(argit != inputs_.end()) << "No arguments are set for " << func_name;
+          CHECK(argit != inputs_.end()) << "Cannot find inputs for " << func_name;
           func_args = argit->second;
         }
       } else {

@@ -92,6 +92,7 @@ class Allocator {
    *  \return The amount of memory currently allocated.
    */
   virtual size_t UsedMemory() const = 0;
+  virtual void ReleaseAll() = 0;
   virtual ~Allocator() = default;
 };
 

@@ -57,6 +57,8 @@ class NaiveAllocator final : public Allocator {
     return used_memory_.load(std::memory_order_relaxed);
   }
 
+  void ReleaseAll() override {}
+
  private:
   std::atomic<size_t> used_memory_;
   TVMContext ctx_;
