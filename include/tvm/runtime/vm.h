@@ -260,9 +260,9 @@ struct Instruction {
     };
     struct /* AllocStorage Operands */ {
       /*! \brief The size of the allocation. */
-      RegName allocation_size;
+      Index allocation_size;
       /*! \brief The alignment of the allocation. */
-      RegName alignment;
+      Index alignment;
       /*! \brief The hint of the dtype. */
       DLDataType dtype_hint;
     } alloc_storage;

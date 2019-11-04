@@ -1044,8 +1044,10 @@ void VirtualMachine::RunLoop() {
         goto main_loop;
       }
       case Opcode::AllocStorage: {
-        auto size = LoadScalarInt(instr.alloc_storage.allocation_size);
-        auto alignment = LoadScalarInt(instr.alloc_storage.alignment);
+        // auto size = LoadScalarInt(instr.alloc_storage.allocation_size);
+        // auto alignment = LoadScalarInt(instr.alloc_storage.alignment);
+        auto size = instr.alloc_storage.allocation_size;
+        auto alignment = instr.alloc_storage.alignment;
 
         DLOG(INFO) <<
           "AllocStorage: allocation_size=" << size <<
