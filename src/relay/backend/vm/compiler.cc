@@ -631,7 +631,7 @@ class VMFunctionCompiler : ExprFunctor<void(const Expr& expr)> {
           // Compute the size of the allocation.
           // this->VisitExpr(args[0]);
           // auto size_register = last_register_;
-          CHECK(args[0].as<ConstantNode>()) << "Doesn't support dynamic size";
+          CHECK(args[0].as<ConstantNode>()) << "Doesn't support dynamic size: " << args[0];
           int64_t allocation_size = reinterpret_cast<int64_t*>(args[0].as<ConstantNode>()->data->data)[0];
 
           // this->VisitExpr(args[1]);
