@@ -1438,6 +1438,7 @@ def _from_mxnet_impl(mod, symbol, shape_dict, dtype_info):
     outputs = outputs[0] if len(outputs) == 1 else _expr.Tuple(outputs)
     if isinstance(outputs, _expr.Function):
         return outputs
+    print("Free vars are {}".format(analysis.free_vars(outputs)))
     func = _expr.Function(analysis.free_vars(outputs), outputs)
     return func
 

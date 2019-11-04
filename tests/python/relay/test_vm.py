@@ -668,8 +668,8 @@ def helper_rnn(cell_type):
     inputs = [relay.var('data')]
     for i in range(num_states):
         inputs.append(relay.var('state%s' % i))
-    # for name, _ in params:
-    #     inputs.append(relay.var(name))
+    for name, _ in params:
+        inputs.append(relay.var(name))
     mod['main'] = relay.Function(inputs, relay.Call(relay_net, inputs))
 
     l = 5
