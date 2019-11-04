@@ -562,6 +562,11 @@ class Prelude:
         tree_adt = self.mod[self.tree]
         self.rose = tree_adt.constructors[0]
 
+        self.btree = self.mod.get_global_type_var("BinaryTree")
+        btree_adt = self.mod[self.btree]
+        self.branch = btree_adt.constructors[0]
+        self.leaf = btree_adt.constructors[1]
+
         GLOBAL_DEFS = [
             "id",
             "compose",

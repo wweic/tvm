@@ -314,3 +314,8 @@ def @iterate[A](%f: fn(A) -> A, %n: Tensor[(), int32]) -> (fn(A) -> A) {
     @compose(%f, @iterate(%f, %n - 1))
   }
 }
+
+type BinaryTree[A] {
+  Branch(BinaryTree[A], BinaryTree[A]),
+  Leaf(A),
+}
