@@ -58,7 +58,7 @@ def veval(f, *args, ctx=tvm.cpu(), target="llvm", params=None):
         exe = relay.vm.compile(mod, target, params=params)
         vm = relay.vm.VirtualMachine(exe)
         vm.init(ctx)
-        vm.set_inputs('main', *args, **params)
+        vm.set_inputs('main', *args)
         print("Running")
         ret = vm.invoke("main", *args)
         return ret
@@ -671,6 +671,9 @@ def helper_rnn(cell_type):
     for name, _ in params:
         inputs.append(relay.var(name))
     mod['main'] = relay.Function(inputs, relay.Call(relay_net, inputs))
+    import os
+    print("pid {}".format(os.getpid()))
+    input("hi")
 
     l = 5
     data_v = np.random.rand(l, batch, 128).astype('float32')
@@ -680,8 +683,8 @@ def helper_rnn(cell_type):
     # pdb.set_trace()
     aas = [data_v] + states_v 
     res = veval(mod, *aas, params=params_new)
+    res = vmobj_to_list(res)
     print("Relay result is {}".format(res))
-    result = _eval_vm(mod, tvm.cpu(), data_v, *states_v)
 
     mx_inputs = [mx.nd.array(x) for x in [data_v, *states_v]]
     mx_outputs = mx_net(*mx_inputs)

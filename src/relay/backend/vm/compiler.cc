@@ -853,7 +853,7 @@ void VMCompiler::SetParam(const std::string& name, runtime::NDArray data_in) {
   params_[name] = data_in;
 }
 
-class BindParams : public ExprMutator {
+class BindParams  {
  public:
   explicit BindParams(const std::unordered_map<std::string, runtime::NDArray>& params)
       : params_(params) {}
@@ -891,29 +891,41 @@ class BindParams : public ExprMutator {
   }
 
 
-  Expr VisitExpr_(const FunctionNode* op) {
-    auto f = GetRef<Function>(op);
-    auto it = visited.find(f);
-    if (it != visited.end()) {
-      return it->second;
-    }
+/*
 
-    auto func = ExprMutator::VisitExpr(f);
-    auto res = BindParamsByName(Downcast<Function>(func), params_);
-    visited[f] = res;
-    return res;
-  }
+Function FunctionNode::make(tvm::Array<Var> params,
+                            Expr body,
+                            Type ret_type,
+                            tvm::Array<TypeVar> type_params,
+                            tvm::Attrs attrs) {
+  NodePtr<FunctionNode> n = make_node<FunctionNode>();
+
+*/
+  // Expr VisitExpr_(const FunctionNode* op) {
+  //   auto f = GetRef<Function>(op);
+  //   auto it = visited.find(f);
+  //   if (it != visited.end()) {
+  //     return it->second;
+  //   }
+
+  //   std::cout << "Bind Visit " << AsText(f, false) << "\n";
+  //   auto func_body = ExprMutator::VisitExpr(f->body);
+  //   auto new_f = FunctionNode::make(FreeVars(func_body), func_body, f->ret_type, f->type_params, f->attrs);
+  //   auto res = BindParamsByName(new_f, params_);
+  //   visited[f] = res;
+  //   return res;
+  // }
 
  private:
   std::unordered_map<std::string, runtime::NDArray> params_;
-  std::unordered_map<Expr, Expr, NodeHash> visited;
+  std::unordered_map<Expr, Expr, NodeHash, NodeEqual> visited;
 };
 
 relay::Function VMCompiler::BindParamsByName(
     relay::Function func,
     const std::unordered_map<std::string, runtime::NDArray>& params) {
-      std::cout << "BindParams " << func << "\n";
-      return Downcast<Function>(BindParams(params).Mutate(func));
+      std::cout << "BindParams " << AsText(func, false) << "\n";
+      return Downcast<Function>(BindParams(params).BindParamsByName(func, params));
 }
 
 void VMCompiler::Compile(Module mod,
@@ -923,11 +935,24 @@ void VMCompiler::Compile(Module mod,
     << "Currently VM compiler doesn't support heterogeneous compilation";
   if (params_.size()) {
     auto functions = mod->functions;
-    for (auto p : functions) {
-      std::cout << "Binding " << p.first << "\n";
-      auto f = BindParamsByName(p.second, params_);
-      mod->Add(p.first, f);
+
+    // for (auto p : functions) {
+    {
+      // std::cout << "Binding " << p.first << "\n";
+      auto gvar = mod->GetGlobalVar("foreach");
+      auto f = BindParamsByName(mod->Lookup("foreach"), params_);
+      std::cout << "After bind params " << AsText(f, false) << "\n";
+      mod->Add(gvar, f);
     }
+
+    {
+      // std::cout << "Binding " << p.first << "\n";
+      auto gvar = mod->GetGlobalVar("main");
+      auto f = BindParamsByName(mod->Lookup("main"), params_);
+      std::cout << "After bind params " << AsText(f, false) << "\n";
+      mod->Add(gvar, f);
+    }
+
   } else {
     std::cout << "Params empty\n";
   }
