@@ -557,9 +557,9 @@ inline Tensor strided_slice(const Tensor& x,
     int interval = std::abs(end_i - begin_i);
     int slice_size = static_cast<int>((interval
                                      + std::abs(stride_vec[i]) - 1) / std::abs(stride_vec[i]));
-    CHECK(stride_vec[i] < 0 ? (end_i < begin_i) : (begin_i < end_i))
-      << ": Input [Begin=" << begin_vec[i] << ", End=" << end_vec[i]
-      << "] is invalid for axis=" << i;
+    // CHECK(stride_vec[i] < 0 ? (end_i < begin_i) : (begin_i < end_i))
+    //   << ": Input [Begin=" << begin_vec[i] << ", End=" << end_vec[i]
+    //   << "] is invalid for axis=" << i;
 
     begin_expr.push_back(make_const(begin[0].type(), begin_i));
     strides_expr.push_back(make_const((strides.size() != 0 ? strides[0].type() : begin[0].type()),

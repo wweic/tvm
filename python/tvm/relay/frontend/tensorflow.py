@@ -28,6 +28,7 @@ from collections import defaultdict
 import numpy as np
 
 import tvm
+import tvm.contrib.graph_runtime as runtime
 
 from tvm.relay.prelude import Prelude
 
@@ -102,6 +103,19 @@ def _get_list_param(params, input_node):
 
 def _get_tuple_param(params, input_node):
     return tuple(_get_param(params, input_node))
+
+def _partial_eval(expr, params):
+    mod = tvm.relay.Module.from_expr(expr)
+    target = "llvm"
+    ctx = tvm.cpu()
+    graph_json, lib, params = tvm.relay.build_module.build(mod, target, params=params)
+    module = runtime.create(graph_json, lib, ctx)
+    module.set_input(**params)
+    module.run()
+    #for free_var in free_vars:
+    #    name = free_var.name_hint
+    #    module.set_input(name, params[name])
+    return [module.get_output(i) for i in range(module.get_num_outputs())]
 
 def _rsqrt():
     def _impl(inputs, attr, params):
@@ -677,7 +691,12 @@ def _tensor_array_concat():
 
 def _tile():
     def _impl(inputs, attr, params):
-        reps = _get_list_param(params, inputs.pop())
+        reps_input = inputs.pop()
+        if isinstance(reps_input, _expr.Call):
+            np_reps = _partial_eval(reps_input, params)[0].asnumpy()
+            reps = [np_reps.flatten()[i] for i in range(np_reps.flatten().shape[0])]
+        else:
+            reps = _get_list_param(params, reps_input)
         new_input = []
         new_input.append(inputs.pop(0))
 
@@ -689,14 +708,24 @@ def _tile():
 
 def _slice():
     def _impl(inputs, attr, params):
-        begin = _get_list_param(params, inputs[1])
-        size = _get_list_param(params, inputs[2])
+        if isinstance(inputs[1], _expr.Call):
+            np_begin = _partial_eval(inputs[1], params)[0].asnumpy()
+            begin = [np_begin.flatten()[0] for i in range(np_begin.flatten().shape[0])]
+        else:
+            begin = _get_list_param(params, inputs[1])
+
+        if isinstance(inputs[2], _expr.Call):
+            np_size =  _partial_eval(inputs[2], params)[0].asnumpy()
+            size = [np_size.flatten()[0] for i in range(np_size.flatten().shape[0])]
+        else:
+            size = _get_list_param(params, inputs[2])
+
         data_shape = attr['_input_shapes'][inputs[0]]
         data_dim = len(data_shape)
         end = size
         for i in range(data_dim):
             if size[i] == -1:
-                end[i] = data_shape[i] - begin[i]
+                end[i] = data_shape[i] - size[i]
             else:
                 end[i] += begin[i]
         return _op.strided_slice(inputs[0], begin=begin, end=end)
@@ -926,6 +955,10 @@ def _reduce(op):
     def _impl(inputs, attr, params):
         axis = _get_list_param(params, inputs[1])
         axis = tuple(axis)
+        if not axis:
+            axis = None
+        #print(axis)
+        #print(inputs[0]._checked_type_)
         return AttrCvt(
             op_name=op,
             extras={'axis': axis},
@@ -1139,18 +1172,31 @@ def _rank():
 
 def _range():
     def _impl(inputs, attr, params):
-        start = _get_param(params, inputs[0])[0]
-        limit = _get_param(params, inputs[1])[0] \
-            if hasattr(inputs[1], "name_hint") or isinstance(inputs[1], _expr.Constant) \
-            else params.pop('Rank').asnumpy()[0]
-        delta = _get_param(params, inputs[2])[0]
+        print(inputs[1])
+        try:
+            start = _get_param(params, inputs[0])[0]
+        except:
+            start = _partial_eval(inputs[0], params)[0]
+
+        try:
+            limit = _get_param(params, inputs[1])[0] \
+                if hasattr(inputs[1], "name_hint") or isinstance(inputs[1], _expr.Constant) \
+                else params.pop('Rank').asnumpy()[0]
+        except:
+            limit = _partial_eval(inputs[1], params)[0].asnumpy()[0]
+
+        try:
+            delta = _get_param(params, inputs[2])[0]
+        except:
+            delta = _partial_eval(inputs[2], params)[0]
+
         dtype = attr['dtype'].name if 'dtype' in attr else "int32"
         return AttrCvt(
             op_name="arange",
             ignores=['Tidx'],
-            extras={'start': _expr.const(start),
-                    "stop": _expr.const(limit),
-                    'step': _expr.const(delta),
+            extras={'start': _expr.const(start) if isinstance(start, np.int32) else start,
+                    "stop": _expr.const(limit) if isinstance(limit, np.int32) else limit,
+                    'step': _expr.const(delta) if isinstance(delta, np.int32) else delta,
                     'dtype': dtype})([], attr)
     return _impl
 
@@ -2104,8 +2150,11 @@ class GraphProto(object):
             node_name_prefix = node.name.rsplit('/', 1)[0]
             control_flow_node_map[node_name_prefix].add(node.op)
             if node.op == 'Placeholder' or node.op == 'PlaceholderWithDefault':
+                print("$$$$$$$$$$$$$$$")
+                print(node.name)
                 # Give priority to user argument.
                 if shape and node.name in shape:
+                    print("Setting input shape")
                     self._input_shapes[node.name] = list(shape[node.name])
                 else:
                     self._input_shapes[node.name] = \
@@ -2117,6 +2166,7 @@ class GraphProto(object):
                                           % node.name)
 
                 self._output_shapes[node.name] = [self._input_shapes[node.name]]
+                print(self._output_shapes[node.name])
                 attr = self._parse_attr(node.attr)
                 self._nodes[node.name] = [_expr.var(node.name,
                                                     shape=self._input_shapes[node.name],
@@ -2133,6 +2183,7 @@ class GraphProto(object):
 
         # Parse the nodes to re-create TF graph using Relay operators.
         for node in graph.node:
+            # print(node.name)
             # Tensorflow doesn't have separate list for params extraction.
             # Operator name 'Const' is treated as a parameter to build params dict.
 
@@ -2224,7 +2275,10 @@ class GraphProto(object):
 
                 # Infer shapes even without specifying "add_shapes=True"
                 if output_shapes == [None]:
+                    print("Start")
                     out_shapes = [_infer_shape(node_item) for node_item in self._nodes[node.name]]
+                    print(output_shapes)
+                    print("End")
                     self._output_shapes[node.name] = out_shapes
 
                 if self._output_shapes[node.name] and shape and node.name in shape:
@@ -2296,11 +2350,14 @@ class GraphProto(object):
 
         if key == 'value':
             np_array = tensor_util.MakeNdarray(value.tensor)
+            #print(name)
+            #print(np_array.dtype)
 
             if np_array.dtype == np.dtype(object):
                 # Object types are generally tensorflow DT_STRING (DecodeJpeg op).
                 # Just leave it as placeholder.
-                if shape:
+                if shape and name in shape:
+                    #print(name, shape)
                     var_shape = shape[name]
                 else:
                     var_shape = tensor_util.TensorShapeProtoToList(value.tensor.tensor_shape)
@@ -2519,6 +2576,7 @@ class GraphProto(object):
         sym : relay.op
             Converted relay operator
         """
+        print("Converting: %s" % op_name)
         identity_list = identity_list if identity_list else _identity_list
         convert_map = convert_map if convert_map else _convert_map
         convert_map_rnn = _convert_map_rnn
@@ -2536,6 +2594,7 @@ class GraphProto(object):
                                              convert_map_rnn)
         else:
             raise NotImplementedError("Operator {} not implemented.".format(op_name))
+        print("Complete converting!")
         return sym
 
 

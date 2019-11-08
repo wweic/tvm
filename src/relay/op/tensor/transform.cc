@@ -1906,8 +1906,8 @@ bool StridedSliceRel(const Array<Type>& types,
     } else {
       if (begin_v < 0) begin_v = 0;
       CHECK_GE(stride_v, 0);
-      CHECK_LT(begin_v, end_v)
-          << "strided_slice get empty slice at axis " << i;
+      //CHECK_LT(begin_v, end_v)
+      //    << "strided_slice get empty slice at axis " << i;
       end_v = std::min(dim_size, end_v);
       slice_range = end_v - begin_v;
       step = stride_v;
@@ -2259,11 +2259,11 @@ Array<Tensor> SliceLikeCompute(const Attrs& attrs,
         axis = static_cast<int>(src_shape.size()) + axis;
       }
       end_idx.Set(axis, target_shape[axis]);
-      CHECK_LE(topi::GetConstInt(end_idx[axis]),
-               topi::GetConstInt(src_shape[axis]))
-        << "End index of axis " << axis << " exceeds input shape: "
-        << topi::GetConstInt(end_idx[axis]) << " vs "
-        << topi::GetConstInt(src_shape[axis]);
+      //CHECK_LE(topi::GetConstInt(end_idx[axis]),
+      //         topi::GetConstInt(src_shape[axis]))
+      //  << "End index of axis " << axis << " exceeds input shape: "
+      //  << topi::GetConstInt(end_idx[axis]) << " vs "
+      //  << topi::GetConstInt(src_shape[axis]);
     }
   }
   return Array<Tensor>{
