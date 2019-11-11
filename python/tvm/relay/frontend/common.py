@@ -462,7 +462,12 @@ def infer_type(node, mod=None):
         entry = mod["main"]
         return entry.body
     else:
-        raise Exception('We should always provide a module')
+        from .. import expr as _expr
+        new_mod = _module.Module.from_expr(node)
+        new_mod = _transform.InferType()(new_mod)
+        entry = new_mod["main"]
+        return entry if isinstance(node, _expr.Function) else entry.body
+        #raise Exception('We should always provide a module')
 
 def infer_shape(inputs, mod=None):
     """A method to get the output shape of an intermediate node in the graph."""

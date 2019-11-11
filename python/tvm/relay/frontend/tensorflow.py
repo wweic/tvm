@@ -623,7 +623,12 @@ def _tensor_array():
 def _tensor_array_scatter():
     def _impl(inputs, attr, params, prelude):
         dtype_str = attr.get('T').name
-        values_rank = len(inputs[2].type_annotation.shape)
+        values = inputs[2]
+        if isinstance(values, _expr.Call):
+            values_shape = _infer_shape(values)
+            values_rank = len(values_shape)
+        else:
+            values_rank = len(values.type_annotation.shape)
         unstack_name = "tensor_array_unstack_tensor{}".format(values_rank)
         unstack_function = prelude.get_var(unstack_name, dtype_str)
         values = unstack_function(inputs[2])
