@@ -336,6 +336,64 @@ class TensorArrayOps(object):
             Function([tensor2], helper_var(const(0), ndim, tensor2),
                      self.prelude.l(self.get_var('tensor_t')()), [])
 
+    def define_tensor_array_unstack_tensor3(self):
+        """Defines a function to unstack the values of a tensor_t with rank 3 in a tensor array.
+
+        tensor_array_unstack_tensor3(t) : tensor_t -> list[tensor_t]
+        """
+        helper_name = self.get_name("tensor_array_unstack_tensor3_helper")
+        helper_var = GlobalVar(helper_name)
+        setattr(self.prelude, helper_name, helper_var)
+        tensor = Var("t", TensorType([Any(), Any(), Any()], self.dtype))
+        up = Var("up", scalar_type('int32'))
+        i = Var("i", scalar_type('int32'))
+
+        helper_body = If(equal(i, up),
+                         self.prelude.nil(),
+                         self.prelude.cons(self.get_var('tensor2')(op.take(tensor, i, axis=0)),
+                                           helper_var(add(i, const(1)), up, tensor)))
+        self.prelude.mod[helper_var] =\
+            Function([i, up, tensor], helper_body, self.prelude.l(self.get_var('tensor_t')()), [])
+
+        tensor_array_unstack_tensor3_name = self.get_name("tensor_array_unstack_tensor3")
+        tensor_array_unstack_tensor3_var = GlobalVar(tensor_array_unstack_tensor3_name)
+        setattr(self.prelude, tensor_array_unstack_tensor3_name, tensor_array_unstack_tensor3_var)
+        tensor3 = Var("tensor", TensorType([Any(), Any(), Any()], self.dtype))
+        shape = op.shape_of(tensor3)
+        ndim = op.take(shape, const(0))
+        self.prelude.mod[tensor_array_unstack_tensor3_var] =\
+            Function([tensor3], helper_var(const(0), ndim, tensor3),
+                     self.prelude.l(self.get_var('tensor_t')()), [])
+
+    def define_tensor_array_unstack_tensor4(self):
+        """Defines a function to unstack the values of a tensor_t with rank 4 in a tensor array.
+
+        tensor_array_unstack_tensor4(t) : tensor_t -> list[tensor_t]
+        """
+        helper_name = self.get_name("tensor_array_unstack_tensor4_helper")
+        helper_var = GlobalVar(helper_name)
+        setattr(self.prelude, helper_name, helper_var)
+        tensor = Var("t", TensorType([Any(), Any(), Any(), Any()], self.dtype))
+        up = Var("up", scalar_type('int32'))
+        i = Var("i", scalar_type('int32'))
+
+        helper_body = If(equal(i, up),
+                         self.prelude.nil(),
+                         self.prelude.cons(self.get_var('tensor3')(op.take(tensor, i, axis=0)),
+                                           helper_var(add(i, const(1)), up, tensor)))
+        self.prelude.mod[helper_var] =\
+            Function([i, up, tensor], helper_body, self.prelude.l(self.get_var('tensor_t')()), [])
+
+        tensor_array_unstack_tensor4_name = self.get_name("tensor_array_unstack_tensor4")
+        tensor_array_unstack_tensor4_var = GlobalVar(tensor_array_unstack_tensor4_name)
+        setattr(self.prelude, tensor_array_unstack_tensor4_name, tensor_array_unstack_tensor4_var)
+        tensor4 = Var("tensor", TensorType([Any(), Any(), Any(), Any()], self.dtype))
+        shape = op.shape_of(tensor4)
+        ndim = op.take(shape, const(0))
+        self.prelude.mod[tensor_array_unstack_tensor4_var] =\
+            Function([tensor4], helper_var(const(0), ndim, tensor4),
+                     self.prelude.l(self.get_var('tensor_t')()), [])
+
     def define_tensor_array_scatter(self):
         """Defines a function to scatter the values of a tensor_t in indices of a tensor array.
         tensor_array_scatter(ta, indices, value) :
@@ -516,6 +574,8 @@ class TensorArrayOps(object):
         self.define_tensor_array_write()
         self.define_tensor_array_unstack_tensor1()
         self.define_tensor_array_unstack_tensor2()
+        self.define_tensor_array_unstack_tensor3()
+        self.define_tensor_array_unstack_tensor4()
         self.define_tensor_array_scatter()
         self.define_tensor_array_split()
         self.define_tensor_array_concat()
