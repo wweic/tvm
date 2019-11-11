@@ -104,19 +104,6 @@ def _get_list_param(params, input_node):
 def _get_tuple_param(params, input_node):
     return tuple(_get_param(params, input_node))
 
-def _partial_eval(expr, params):
-    mod = tvm.relay.Module.from_expr(expr)
-    target = "llvm"
-    ctx = tvm.cpu()
-    graph_json, lib, params = tvm.relay.build_module.build(mod, target, params=params)
-    module = runtime.create(graph_json, lib, ctx)
-    module.set_input(**params)
-    module.run()
-    #for free_var in free_vars:
-    #    name = free_var.name_hint
-    #    module.set_input(name, params[name])
-    return [module.get_output(i) for i in range(module.get_num_outputs())]
-
 def _rsqrt():
     def _impl(inputs, attr, params):
         inputs.append(tvm.relay.const(-0.5, attr['T'].name))
@@ -693,7 +680,7 @@ def _tile():
     def _impl(inputs, attr, params):
         reps_input = inputs.pop()
         if isinstance(reps_input, _expr.Call):
-            np_reps = _partial_eval(reps_input, params)[0].asnumpy()
+            np_reps = _infer_value(reps_input, params).asnumpy()
             reps = [np_reps.flatten()[i] for i in range(np_reps.flatten().shape[0])]
         else:
             reps = _get_list_param(params, reps_input)
@@ -709,13 +696,13 @@ def _tile():
 def _slice():
     def _impl(inputs, attr, params):
         if isinstance(inputs[1], _expr.Call):
-            np_begin = _partial_eval(inputs[1], params)[0].asnumpy()
+            np_begin = _infer_value(inputs[1], params).asnumpy()
             begin = [np_begin.flatten()[0] for i in range(np_begin.flatten().shape[0])]
         else:
             begin = _get_list_param(params, inputs[1])
 
         if isinstance(inputs[2], _expr.Call):
-            np_size =  _partial_eval(inputs[2], params)[0].asnumpy()
+            np_size =  _infer_value(inputs[2], params).asnumpy()
             size = [np_size.flatten()[0] for i in range(np_size.flatten().shape[0])]
         else:
             size = _get_list_param(params, inputs[2])
@@ -994,7 +981,7 @@ def _gather_nd():
     return _impl
 
 def _stridedSlice():
-    def _impl(inputs, attr, params):
+    def _impl(inputs, attr, params, mod):
         """Strided Slice.
         Operator description: https://www.tensorflow.org/api_docs/python/tf/strided_slice
         Tensorflow mask validation: https://github.com/tensorflow/tensorflow/blob/master/
@@ -1077,7 +1064,7 @@ def _stridedSlice():
         if begin_mask or end_mask or ellipsis_mask or new_axis_mask or shrink_axis_mask:
             begin, end, stride, fshape_indices = _transform_mask(stride_dim, ellipsis_mask)
         out = _op.strided_slice(inputs[0], begin=begin, end=end, strides=stride)
-        out_shape = _infer_shape(out)
+        out_shape = _infer_shape(out, mod)
         if not fshape_indices:
             fshape_indices = range(len(out_shape))
 
@@ -1176,19 +1163,19 @@ def _range():
         try:
             start = _get_param(params, inputs[0])[0]
         except:
-            start = _partial_eval(inputs[0], params)[0]
+            start = _infer_value(inputs[0], params).asnumpy()[0]
 
         try:
             limit = _get_param(params, inputs[1])[0] \
                 if hasattr(inputs[1], "name_hint") or isinstance(inputs[1], _expr.Constant) \
                 else params.pop('Rank').asnumpy()[0]
         except:
-            limit = _partial_eval(inputs[1], params)[0].asnumpy()[0]
+            limit = _infer_value(inputs[1], params).asnumpy()[0]
 
         try:
             delta = _get_param(params, inputs[2])[0]
         except:
-            delta = _partial_eval(inputs[2], params)[0]
+            delta = _infer_value(inputs[2], params).asnumpy()[0]
 
         dtype = attr['dtype'].name if 'dtype' in attr else "int32"
         return AttrCvt(
@@ -2275,10 +2262,7 @@ class GraphProto(object):
 
                 # Infer shapes even without specifying "add_shapes=True"
                 if output_shapes == [None]:
-                    print("Start")
-                    out_shapes = [_infer_shape(node_item) for node_item in self._nodes[node.name]]
-                    print(output_shapes)
-                    print("End")
+                    out_shapes = [_infer_shape(node_item, self._mod) for node_item in self._nodes[node.name]]
                     self._output_shapes[node.name] = out_shapes
 
                 if self._output_shapes[node.name] and shape and node.name in shape:
@@ -2288,7 +2272,7 @@ class GraphProto(object):
             node_output = self._nodes[node.name]
             if shape and (not self._output_shapes[node.name][0]
                           or -1 in self._output_shapes[node.name][0]):
-                out_shapes = [_infer_shape(node_item) for node_item in node_output]
+                out_shapes = [_infer_shape(node_item, self._mod) for node_item in node_output]
                 self._output_shapes[node.name] = out_shapes
 
         out = []
@@ -2492,10 +2476,15 @@ class GraphProto(object):
         op : tvm.relay.Expr
             Converted relay expression.
         """
+        def _query(name):
+            if name not in self._nodes:
+                name = name.split(":")[0]
+            return self._nodes[name]
+
         node_name_prefix = node.name.rsplit('/', 1)[0]
         if node.op == "Merge":
             if _in_while_loop(control_flow_node_map, node_name_prefix):
-                op = self._nodes[node.input[0]]
+                op = _query(node.input[0])
                 self._loops[node_name_prefix] = Loop()
             else:
                 if len(self._branches) == 0:
@@ -2524,13 +2513,13 @@ class GraphProto(object):
             expr = loop.while_loop()
             op = _expr.TupleGetItem(expr, exit_number)
         elif node.op == "Enter":
-            op = self._nodes[node.input[0]]
+            op = _query(node.input[0])
         elif node.op == "LoopCond":
-            op = self._nodes[node.input[0]]
+            op = _query(node.input[0])
             assert len(op) == 1
             self._loops[node_name_prefix].cond = op[0]
         elif node.op == "Switch":
-            op = self._nodes[node.input[0]]
+            op = _query(node.input[0])
             assert len(op) == 1
             if _in_while_loop(control_flow_node_map, node_name_prefix):
                 self._loops[node_name_prefix].loop_vars.append(op[0])
@@ -2540,7 +2529,7 @@ class GraphProto(object):
                 chk_op = _infer_type(op[0])
                 self._branches[node_name_prefix].cond = chk_op
         elif node.op == "NextIteration":
-            op = self._nodes[node.input[0]]
+            op = _query(node.input[0])
             assert len(op) == 1
             self._loops[node_name_prefix].body.append(op[0])
         else:
@@ -2585,6 +2574,8 @@ class GraphProto(object):
         elif op_name in convert_map:
             if 'TensorArray' in op_name:
                 sym = convert_map[op_name](inputs, attrs, self._params, self._prelude)
+            elif 'StridedSlice' in op_name:
+                sym = convert_map[op_name](inputs, attrs, self._params, self._mod)
             else:
                 sym = convert_map[op_name](inputs, attrs, self._params)
 
