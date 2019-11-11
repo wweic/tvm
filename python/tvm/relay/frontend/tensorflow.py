@@ -31,9 +31,11 @@ import tvm
 import tvm.contrib.graph_runtime as runtime
 
 from tvm.relay.prelude import Prelude
+from topi.util import get_const_tuple
 
 from .. import analysis
 from .. import expr as _expr
+from .. import transform as _transform
 from .. import op as _op
 from ..expr_functor import ExprMutator
 from .. import module as _module
@@ -625,7 +627,12 @@ def _tensor_array_scatter():
         dtype_str = attr.get('T').name
         values = inputs[2]
         if isinstance(values, _expr.Call):
-            values_shape = _infer_shape(values)
+            new_mod = _module.Module.from_expr(values)
+            new_mod = _transform.InferType()(new_mod)
+            entry = new_mod["main"]
+            out_type = entry.body
+            checked_type = out_type.checked_type
+            values_shape = get_const_tuple(out_type.checked_type.shape)
             values_rank = len(values_shape)
         else:
             values_rank = len(values.type_annotation.shape)
