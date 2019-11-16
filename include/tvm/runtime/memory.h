@@ -77,8 +77,9 @@ class ObjAllocatorBase {
 
   /*!
    * \tparam T The type to be allocated.
+   * \tparam ElemType The type to array element.
    * \tparam Args The constructor signature.
-   * \param extra The size of extra space.
+   * \param num_elems The number of array elements.
    * \param args The arguments.
    */
   template<typename T, typename ElemType, typename... Args>

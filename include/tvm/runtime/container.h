@@ -44,7 +44,7 @@ class ADTObj : public Object {
    * \param idx The index of the element.
    * \return The ObjectRef at the index.
    */
-  ObjectRef operator [](size_t idx) const;
+  ObjectRef operator[](size_t idx) const;
 
   void* AddressOf(int i) const;
 

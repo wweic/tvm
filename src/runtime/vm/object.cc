@@ -80,7 +80,7 @@ TVM_REGISTER_GLOBAL("_vmobj.GetADTFields")
   const auto* cell = obj.as<ADTObj>();
   CHECK(cell != nullptr);
   CHECK_LT(idx, cell->size_);
-  *rv = cell->operator [](idx);
+  *rv = (*cell)[idx];
 });
 
 TVM_REGISTER_GLOBAL("_vmobj.Tensor")

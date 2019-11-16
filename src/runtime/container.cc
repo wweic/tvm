@@ -29,7 +29,7 @@
 namespace tvm {
 namespace runtime {
 
-ObjectRef ADTObj::operator [](size_t idx) const {
+ObjectRef ADTObj::operator[](size_t idx) const {
   if (idx > this->size_) {
     LOG(FATAL) << "Index out of bound at " << idx << " bound is " << this->size_ << "\n";
   }
@@ -43,8 +43,6 @@ void* ADTObj::AddressOf(int i) const {
 }
 
 ADTObj::~ADTObj() {
-  ADTObj* self = const_cast<ADTObj*>(this);
-  Object* parent = static_cast<Object*>(self);
   for (size_t i = 0; i < size_; ++i) {
     ObjectRef* fp = reinterpret_cast<ObjectRef*>(AddressOf(i));
     fp->ObjectRef::~ObjectRef();
