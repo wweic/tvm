@@ -285,7 +285,7 @@ class Object {
    */
   inline void DecRef();
 
- private:
+ public:
   /*!
    * \return The usage count of the cell.
    * \note We use stl style naming to be consistent with known API in shared_ptr.
