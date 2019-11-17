@@ -78,7 +78,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
   for (size_t i = 0; i < num_elems; ++i) {
     void* field_p = ptr->AddressOf(i);
     new (field_p) ObjectRef(*it);
-    ADTObj* op = reinterprete_cast<ADTObj*>(field_p);
+    ADTObj* op = reinterpret_cast<ADTObj*>(field_p);
     std::cout << "Setting to field " << (void*)op << "\n";
     ++it;
   }
