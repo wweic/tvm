@@ -53,8 +53,8 @@ ADTObj::~ADTObj() {
 }
 
 ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
-  ADT(tag, fields.begin(), fields.end());
-  return;
+  // ADT(tag, fields.begin(), fields.end());
+  // return;
 
   size_t num_elems = fields.size();
   auto ptr = make_array<ADTObj, ObjectRef>(num_elems);
@@ -88,6 +88,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     ++it;
   }
   data_ = std::move(ptr);
+  std::cout << "Finish constructor\n";
 }
 
 ADT ADT::Tuple(std::vector<ObjectRef> fields) {
