@@ -428,6 +428,7 @@ class ObjectPtr {
    * \return reference to self.
    */
   ObjectPtr<T>& operator=(const ObjectPtr<T>& other) {  // NOLINT(*)
+    std::cout << "assignment = 1\n";
     // takes in plane operator to enable copy elison.
     // copy-and-swap idiom
     ObjectPtr(other).swap(*this);  // NOLINT(*)
@@ -439,6 +440,7 @@ class ObjectPtr {
    * \return reference to self.
    */
   ObjectPtr<T>& operator=(ObjectPtr<T>&& other) {  // NOLINT(*)
+    std::cout << "assignment = 2\n";  
     // copy-and-swap idiom
     ObjectPtr(std::move(other)).swap(*this);  // NOLINT(*)
     return *this;
