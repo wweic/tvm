@@ -69,7 +69,7 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
   data_ = std::move(ptr);
 }
 
-void ADTObj::Dump() {
+void ADTObj::Dump() const {
   for (size_t i = 0; i < this->size_; ++i) {
     ObjectRef* fp = reinterpret_cast<ObjectRef*>(this->AddressOf(i));
     std::cout << "Field " << i << " " << fp->get()->use_count() << "\n";

@@ -48,7 +48,7 @@ class ADTObj : public Object {
 
   void* AddressOf(int i) const;
 
-  void Dump();
+  void Dump() const;
 
   virtual ~ADTObj();
 
