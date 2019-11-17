@@ -52,8 +52,8 @@ ADTObj::~ADTObj() {
 }
 
 ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
-  // ADT(tag, fields.begin(), fields.end());
-  // return;
+  ADT(tag, fields.begin(), fields.end());
+  return;
 
   size_t num_elems = fields.size();
   auto ptr = make_array<ADTObj, ObjectRef>(num_elems);
