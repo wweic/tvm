@@ -53,8 +53,8 @@ ADTObj::~ADTObj() {
 }
 
 ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
-  // ADT(tag, fields.begin(), fields.end());
-  // return;
+  ADT(tag, fields.begin(), fields.end());
+  return;
 
   size_t num_elems = fields.size();
   auto ptr = make_array<ADTObj, ObjectRef>(num_elems);
@@ -66,8 +66,8 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
     ObjectRef* op = reinterpret_cast<ObjectRef*>(field_p);
     std::cout << "Vector Setting to field " << (void*)op << " count: " << op->get()->use_count() << "\n";
   }
+  ptr_->Dump();
   data_ = std::move(ptr);
-  data_->Dump();
 }
 
 void ADTObj::Dump() const {
@@ -98,8 +98,8 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     std::cout << "Setting to field " << (void*)op << " count: " << op->get()->use_count() << "\n";
     ++it;
   }
+  ptr_->Dump();
   data_ = std::move(ptr);
-  // data_->Dump();
   std::cout << "Finish constructor\n";
 }
 
