@@ -370,7 +370,7 @@ class ObjectPtr {
   ObjectPtr(ObjectPtr<T>&& other)  // NOLINT(*)
       : data_(other.data_) {
         std::cout << "cons 3\n";
-    std::cout << "set " << (void*)&other << "'s " << (void*)other.data_ << " to null\n";
+    std::cout << (void*)(const_cast<ObjectPtr*>(this)) << " set " << (void*)&other << "'s " << (void*)other.data_ << " to null\n";
     other.data_ = nullptr;
   }
   /*!
@@ -383,7 +383,7 @@ class ObjectPtr {
     static_assert(std::is_base_of<T, Y>::value,
                   "can only assign of child class ObjectPtr to parent");
         std::cout << "cons 4\n";
-    std::cout << "set " << (void*)&other << "'s " << (void*)other.data_ << " to null\n";
+    std::cout << (void*)(const_cast<ObjectPtr*>(this)) << " set " << (void*)&other << "'s " << (void*)other.data_ << " to null\n";
     other.data_ = nullptr;
   }
   /*! \brief destructor */
@@ -441,7 +441,7 @@ class ObjectPtr {
     if (data_ != nullptr) {
       data_->DecRef();
       std::cout << (void*)data_ << " now has count " << use_count() << "\n";
-      std::cout << "set " << (void*)this << " 's " << (void*)data_ << " to null" << "\n";
+    std::cout << (void*)(const_cast<ObjectPtr*>(this)) << " set " << (void*)&other << "'s " << (void*)other.data_ << " to null\n";
       data_ = nullptr;
     }
   }
