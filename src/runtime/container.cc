@@ -39,7 +39,7 @@ ObjectRef ADTObj::operator[](size_t idx) const {
 void* ADTObj::AddressOf(int i) const {
   ADTObj* self = const_cast<ADTObj*>(this);
   char* fields = reinterpret_cast<char*>(self) + sizeof(ADTObj);
-  ObjectRef* field_p = reinterpret_cast<ObjectRef>(fields + i * sizeof(ObjectRef));
+  ObjectRef* field_p = reinterpret_cast<ObjectRef*>(fields + i * sizeof(ObjectRef));
   std::cout << (void*)field_p << " count: " << field_p->use_count() << "\n";
   return field_p;
 }
