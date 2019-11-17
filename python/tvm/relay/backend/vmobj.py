@@ -84,6 +84,7 @@ class ADT(Object):
         return _vmobj.GetADTTag(self)
 
     def __getitem__(self, idx):
+        print("get item {}".format(idx))
         return getitem_helper(
             self, _vmobj.GetADTFields, len(self), idx)
 
