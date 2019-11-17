@@ -82,7 +82,7 @@ def test_split():
     for i in range(3):
         tvm.testing.assert_allclose(res[i].asnumpy(), ref_res[i])
 
-def test_split_no_fuse():
+def test_spli_t_no_fuse():
     x = relay.var('x', shape=(12,))
     y = relay.split(x, 3, axis=0).astuple()
     z = relay.concatenate([relay.TupleGetItem(y, 0)], axis=0)
