@@ -77,6 +77,7 @@ TVM_REGISTER_GLOBAL("_vmobj.GetADTFields")
 .set_body([](TVMArgs args, TVMRetValue* rv) {
   ObjectRef obj = args[0];
   int idx = args[1];
+  std::cout << "GetField " << idx << "\n";
   const auto* cell = obj.as<ADTObj>();
   CHECK(cell != nullptr);
   CHECK_LT(idx, cell->size_);
