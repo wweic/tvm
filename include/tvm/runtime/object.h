@@ -341,9 +341,15 @@ template <typename T>
 class ObjectPtr {
  public:
   /*! \brief default constructor */
-  ObjectPtr() {}
+  ObjectPtr() {
+    std::cout << "default constructor\n";
+  }
+
   /*! \brief default constructor */
-  ObjectPtr(std::nullptr_t) {}  // NOLINT(*)
+  ObjectPtr(std::nullptr_t) {
+    std::cout << "nullptr constructor\n";
+  }  // NOLINT(*)
+  
   /*!
    * \brief copy constructor
    * \param other The value to be moved
