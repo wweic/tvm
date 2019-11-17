@@ -70,6 +70,8 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
 }
 
 void ADTObj::Dump() const {
+  ADTObj* self = const_cast<ADTObj*>(this);
+  std::cout << "This is " << (void*)self << "\n";
   for (size_t i = 0; i < this->size_; ++i) {
     ObjectRef* fp = reinterpret_cast<ObjectRef*>(this->AddressOf(i));
     std::cout << "Field " << i << " " << (void*)fp;
