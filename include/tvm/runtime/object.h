@@ -349,7 +349,7 @@ class ObjectPtr {
   ObjectPtr(std::nullptr_t) {
     std::cout << "nullptr constructor\n";
   }  // NOLINT(*)
-  
+
   /*!
    * \brief copy constructor
    * \param other The value to be moved
@@ -358,6 +358,12 @@ class ObjectPtr {
       : ObjectPtr(other.data_) {
         std::cout << "cons 1\n";
       }
+
+  ObjectPtr(ObjectPtr<T> other)  // NOLINT(*)
+      : ObjectPtr(other.data_) {
+        std::cout << "cons 11\n";
+      }
+
   /*!
    * \brief copy constructor
    * \param other The value to be moved
@@ -368,6 +374,14 @@ class ObjectPtr {
     static_assert(std::is_base_of<T, U>::value,
                   "can only assign of child class ObjectPtr to parent");
         std::cout << "cons 2\n";                  
+  }
+
+    template <typename U>
+  ObjectPtr(ObjectPtr<U> other)  // NOLINT(*)
+      : ObjectPtr(other.data_) {
+    static_assert(std::is_base_of<T, U>::value,
+                  "can only assign of child class ObjectPtr to parent");
+        std::cout << "cons 22\n";                  
   }
   /*!
    * \brief move constructor
