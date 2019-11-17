@@ -98,6 +98,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     ++it;
   }
   data_ = std::move(ptr);
+  data_->Dump();
   std::cout << "Finish constructor\n";
 }
 
