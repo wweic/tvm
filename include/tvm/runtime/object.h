@@ -706,12 +706,12 @@ struct ObjectEqual {
 #if TVM_OBJECT_ATOMIC_REF_COUNTER
 
 inline void Object::IncRef() {
-  std::cout << "IncRef " << (void*)this << "\n";
+  // std::cout << "IncRef " << (void*)this << "\n";
   ref_counter_.fetch_add(1, std::memory_order_relaxed);
 }
 
 inline void Object::DecRef() {
-  std::cout << "DevRef " << (void*)this << "\n";
+  // std::cout << "DecRef " << (void*)this << "\n";
   if (ref_counter_.fetch_sub(1, std::memory_order_release) == 1) {
     std::atomic_thread_fence(std::memory_order_acquire);
     if (this->deleter_ != nullptr) {
