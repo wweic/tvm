@@ -23,6 +23,7 @@
 #ifndef TVM_RUNTIME_MEMORY_H_
 #define TVM_RUNTIME_MEMORY_H_
 
+#include <cstring>
 #include <cstdlib>
 #include <utility>
 #include <type_traits>
