@@ -66,7 +66,7 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
     ObjectRef* op = reinterpret_cast<ObjectRef*>(field_p);
     std::cout << "Vector Setting to field " << (void*)op << " count: " << op->get()->use_count() << "\n";
   }
-  ptr_->Dump();
+  ptr->Dump();
   data_ = std::move(ptr);
 }
 
@@ -98,7 +98,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     std::cout << "Setting to field " << (void*)op << " count: " << op->get()->use_count() << "\n";
     ++it;
   }
-  ptr_->Dump();
+  ptr->Dump();
   data_ = std::move(ptr);
   std::cout << "Finish constructor\n";
 }
