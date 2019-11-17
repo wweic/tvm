@@ -40,7 +40,7 @@ void* ADTObj::AddressOf(int i) const {
   ADTObj* self = const_cast<ADTObj*>(this);
   char* fields = reinterpret_cast<char*>(self) + sizeof(ADTObj);
   ObjectRef* field_p = reinterpret_cast<ObjectRef*>(fields + i * sizeof(ObjectRef));
-  std::cout << (void*)field_p << " count: " << field_p->use_count() << "\n";
+  std::cout << (void*)field_p << " count: " << field_p->get()->use_count() << "\n";
   return field_p;
 }
 
