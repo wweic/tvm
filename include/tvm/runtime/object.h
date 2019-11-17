@@ -440,7 +440,7 @@ class ObjectPtr {
     std::cout << (void*)self << " objptr has count " << use_count() << "\n";
     if (data_ != nullptr) {
       data_->DecRef();
-      std::cout << "GC object!\n";
+      std::cout << "GC object " << self << "\n";
       data_ = nullptr;
     }
   }
