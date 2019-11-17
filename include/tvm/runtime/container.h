@@ -48,6 +48,8 @@ class ADTObj : public Object {
 
   void* AddressOf(int i) const;
 
+  void Dump();
+
   virtual ~ADTObj();
 
   static constexpr const uint32_t _type_index = TypeIndex::kVMADT;
@@ -64,8 +66,6 @@ class ADT : public ObjectRef {
   ADT(uint32_t tag, Iterator begin, Iterator end);
 
   ADT(uint32_t tag, std::initializer_list<ObjectRef> init);
-
-  void Dump();
   
   /*!
    * \brief construct a tuple object.
