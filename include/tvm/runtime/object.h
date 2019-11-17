@@ -470,7 +470,7 @@ class ObjectPtr {
     return data_ != nullptr;
   }
 
- private:
+ public:
   /*! \brief internal pointer field */
   Object* data_{nullptr};
   /*!
