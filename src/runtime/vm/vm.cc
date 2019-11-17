@@ -1006,7 +1006,9 @@ void VirtualMachine::RunLoop() {
         for (Index i = 0; i < instr.num_fields; ++i) {
           fields.push_back(ReadRegister(instr.datatype_fields[i]));
         }
-        ObjectRef obj = ADT(instr.constructor_tag, fields);
+        ObjectRef* tmp = new ADT(instr.constructor_tag, fields);
+        ObjectRef obj(*tmp);
+        delete tmp;
         std::cout << "Finished ADT object " << (void*)&(obj.data_) << " " << obj.defined() << "\n";
         auto* p = obj.as<ADTObj>();
         std::cout << "Start Dump\n";
