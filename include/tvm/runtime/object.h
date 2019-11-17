@@ -440,10 +440,9 @@ class ObjectPtr {
   void reset() {
     if (data_ != nullptr) {
       data_->DecRef();
-      std::cout << (void*)data_ << " now has count " << use_count();
-      // data_ = nullptr;
+      std::cout << (void*)data_ << " now has count " << use_count() << "\n";
+      data_ = nullptr;
     }
-    std::cout << "\n";
   }
   /*! \return The use count of the ptr, for debug purposes */
   int use_count() const {
