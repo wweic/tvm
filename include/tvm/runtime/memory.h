@@ -172,6 +172,7 @@ class ArrayObjAllocator :
       size_t factor = sizeof(ArrayType) / sizeof(ElemType);
       num_elems = (num_elems + factor - 1) / factor;
       StorageType* data = new StorageType[num_elems+1];
+      std::memset(data, 0, sizeof(StorageType) * (num_elems+1));
       new (data) ArrayType(std::forward<Args>(args)...);
       return reinterpret_cast<ArrayType*>(data);
     }
