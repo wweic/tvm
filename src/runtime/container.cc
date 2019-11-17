@@ -68,6 +68,7 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
   }
   ptr->Dump();
   data_ = std::move(ptr);
+  std::cout << "Finish constructor, defined " << this->defined() << "\n";
 }
 
 void ADTObj::Dump() const {
