@@ -84,7 +84,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     void* field_p = ptr->AddressOf(i);
     new (field_p) ObjectRef(*it);
     ADTObj* op = reinterpret_cast<ADTObj*>(field_p);
-    std::cout << "Setting to field " << (void*)op << "\n";
+    std::cout << "Setting to field " << (void*)op << " count: " << op->get()->use_count() << "\n";
     ++it;
   }
   data_ = std::move(ptr);
