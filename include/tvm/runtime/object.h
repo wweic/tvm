@@ -366,6 +366,7 @@ class ObjectPtr {
    */
   ObjectPtr(ObjectPtr<T>&& other)  // NOLINT(*)
       : data_(other.data_) {
+        std::cout << "369\n";
     other.data_ = nullptr;
   }
   /*!
@@ -377,6 +378,7 @@ class ObjectPtr {
       : data_(other.data_) {
     static_assert(std::is_base_of<T, Y>::value,
                   "can only assign of child class ObjectPtr to parent");
+        std::cout << "381\n";                  
     other.data_ = nullptr;
   }
   /*! \brief destructor */
