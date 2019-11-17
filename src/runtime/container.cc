@@ -100,7 +100,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
   }
   ptr->Dump();
   data_ = std::move(ptr);
-  std::cout << "Finish constructor\n";
+  std::cout << "Finish constructor, defined " << data_.defined() << "\n";
 }
 
 ADT ADT::Tuple(std::vector<ObjectRef> fields) {
