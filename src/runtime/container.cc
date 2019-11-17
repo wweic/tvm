@@ -68,7 +68,7 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
   }
   ptr->Dump();
   data_ = std::move(ptr);
-  std::cout << "data Use count " << data_->use_count() << "\n";
+  std::cout << "data " << (void*)data_.data_ << " Use count " << data_->use_count() << "\n";
   std::cout << "ptr Use count " << (void*)ptr.data_ << "\n";
   std::cout << "Finish constructor " << (void*)(const_cast<ADT*>(this)) << " " << this->defined() << "\n";
 }
@@ -103,7 +103,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
   }
   ptr->Dump();
   data_ = std::move(ptr);
-  std::cout << "data Use count " << data_->use_count() << "\n";
+  std::cout << "data " << (void*)data_.data_ << " Use count " << data_->use_count() << "\n";
   std::cout << "ptr Use count " << (void*)ptr.data_ << "\n";
   std::cout << "Finish constructor " << (void*)(const_cast<ADT*>(this)) << " " << this->defined() << "\n";
 }
