@@ -436,6 +436,8 @@ class ObjectPtr {
   }
   /*! \brief reset the content of ptr to be nullptr */
   void reset() {
+    ObjectPtr* self = const_cast<ObjectPtr*>(this);
+    std::cout << (void*)self << " objptr has count " << use_count() << "\n";
     if (data_ != nullptr) {
       data_->DecRef();
       std::cout << "GC object!\n";
