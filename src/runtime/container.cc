@@ -67,6 +67,7 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
     std::cout << "Vector Setting to field " << (void*)op << " count: " << op->get()->use_count() << "\n";
   }
   data_ = std::move(ptr);
+  data_->Dump();
 }
 
 void ADTObj::Dump() const {
@@ -98,7 +99,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     ++it;
   }
   data_ = std::move(ptr);
-  data_->Dump();
+  // data_->Dump();
   std::cout << "Finish constructor\n";
 }
 
