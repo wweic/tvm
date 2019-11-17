@@ -368,7 +368,7 @@ class ObjectPtr {
    * \param other The value to be moved
    */
   ObjectPtr(ObjectPtr<T>&& other)  // NOLINT(*)
-      : data_(other.data_) {
+      : ObjectPtr(other.data_) {
         std::cout << "cons 3\n";
     other.data_ = nullptr;
   }
