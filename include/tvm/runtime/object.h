@@ -572,7 +572,7 @@ class ObjectRef {
   /*! \brief type indicate the container type. */
   using ContainerType = Object;
 
- protected:
+ public:
   /*! \brief Internal pointer that backs the reference. */
   ObjectPtr<Object> data_;
   /*! \return return a mutable internal ptr, can be used by sub-classes. */
