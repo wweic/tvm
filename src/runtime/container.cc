@@ -102,7 +102,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
     ++it;
   }
   ptr->Dump();
-  data_ = std::move(ptr);
+  data_ = ptr;
   std::cout << "data " << (void*)data_.data_ << " Use count " << data_->use_count() << "\n";
   std::cout << "ptr Use count " << (void*)ptr.data_ << "\n";
   std::cout << "Finish constructor " << (void*)(const_cast<ADT*>(this)) << " " << this->defined() << "\n";
