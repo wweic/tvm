@@ -349,7 +349,9 @@ class ObjectPtr {
    * \param other The value to be moved
    */
   ObjectPtr(const ObjectPtr<T>& other)  // NOLINT(*)
-      : ObjectPtr(other.data_) {}
+      : ObjectPtr(other.data_) {
+        std::cout << "cons 1\n";
+      }
   /*!
    * \brief copy constructor
    * \param other The value to be moved
@@ -359,6 +361,7 @@ class ObjectPtr {
       : ObjectPtr(other.data_) {
     static_assert(std::is_base_of<T, U>::value,
                   "can only assign of child class ObjectPtr to parent");
+        std::cout << "cons 2\n";                  
   }
   /*!
    * \brief move constructor
@@ -366,7 +369,7 @@ class ObjectPtr {
    */
   ObjectPtr(ObjectPtr<T>&& other)  // NOLINT(*)
       : data_(other.data_) {
-        std::cout << "369\n";
+        std::cout << "cons 3\n";
     other.data_ = nullptr;
   }
   /*!
@@ -378,7 +381,7 @@ class ObjectPtr {
       : data_(other.data_) {
     static_assert(std::is_base_of<T, Y>::value,
                   "can only assign of child class ObjectPtr to parent");
-        std::cout << "381\n";                  
+        std::cout << "cons 4\n";
     other.data_ = nullptr;
   }
   /*! \brief destructor */
