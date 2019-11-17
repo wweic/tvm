@@ -441,8 +441,7 @@ class ObjectPtr {
     if (data_ != nullptr) {
       data_->DecRef();
       std::cout << (void*)data_ << " now has count " << use_count();
-      std::cout << "set " << (void*)data_ << " to null\n";
-      data_ = nullptr;
+      // data_ = nullptr;
     }
     std::cout << "\n";
   }
