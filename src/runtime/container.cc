@@ -69,6 +69,13 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
   data_ = std::move(ptr);
 }
 
+void ADTObj::Dump() {
+  for (size_t i = 0; i < this->size_; ++i) {
+    ObjectRef* fp = this->AddressOf(i);
+    std::cout << "Field " << i << " " << fp->get()->use_count() << "\n";
+  }
+}
+
 ADT::ADT(uint32_t tag, std::initializer_list<ObjectRef> init) {
   ADT(tag, init.begin(), init.end());
 }

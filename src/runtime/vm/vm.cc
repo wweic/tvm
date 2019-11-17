@@ -1007,6 +1007,8 @@ void VirtualMachine::RunLoop() {
           fields.push_back(ReadRegister(instr.datatype_fields[i]));
         }
         ObjectRef obj = ADT(instr.constructor_tag, fields);
+        auto* p = obj.as<ADTObject>();
+        p->Dump();
         WriteRegister(instr.dst, obj);
         pc++;
         goto main_loop;

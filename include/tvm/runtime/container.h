@@ -65,6 +65,8 @@ class ADT : public ObjectRef {
 
   ADT(uint32_t tag, std::initializer_list<ObjectRef> init);
 
+  void Dump();
+  
   /*!
    * \brief construct a tuple object.
    * \param fields The fields of the tuple.
