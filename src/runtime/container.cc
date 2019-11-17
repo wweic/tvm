@@ -68,7 +68,7 @@ ADT::ADT(uint32_t tag, std::vector<ObjectRef> fields) {
   }
   ptr->Dump();
   data_ = std::move(ptr);
-  std::cout << "Finish constructor, defined " << this->defined() << "\n";
+  std::cout << "Finish constructor " << (void*)(const_cast<ADT*>(this)) << " " << defined  << " " << this->defined() << "\n";
 }
 
 void ADTObj::Dump() const {
@@ -101,7 +101,7 @@ ADT::ADT(uint32_t tag, Iterator begin, Iterator end) {
   }
   ptr->Dump();
   data_ = std::move(ptr);
-  std::cout << "Finish constructor, defined " << this->defined() << "\n";
+  std::cout << "Finish constructor " << (void*)(const_cast<ADT*>(this)) << " " << defined  << " " << this->defined() << "\n";
 }
 
 ADT ADT::Tuple(std::vector<ObjectRef> fields) {
