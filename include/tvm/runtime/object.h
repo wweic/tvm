@@ -438,6 +438,7 @@ class ObjectPtr {
   void reset() {
     if (data_ != nullptr) {
       data_->DecRef();
+      std::cout << "GC object!\n";
       data_ = nullptr;
     }
   }
