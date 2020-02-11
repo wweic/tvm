@@ -122,7 +122,7 @@ def vmobj_to_list(o, dtype="float32"):
             tensor_nil = p.get_var("tensor_nil", dtype=dtype)
             if tensor_nil.tag == o.tag:
                 return [0]
-            return []
+            return [0]
 
         result = []
         for f in o:
@@ -717,6 +717,37 @@ def test_iterate():
     res = intrp.evaluate(relay.Function([], expr)())
     assert count(res) == 12
 
+def test_static_tensor_array_constructor():
+    def run(dtype, shape):
+        x = relay.var('x')
+        mod = relay.Module()
+        p = Prelude(mod)
+        from tvm.relay.prelude import StaticTensorArrayOps
+        static_tensor_array_ops = StaticTensorArrayOps(p, dtype, shape)
+        static_tensor_array_ops.register()
+        tensor_constructor = p.get_name_static('tensor_constructor', dtype, shape)
+        print(tensor_constructor)
+        assert tensor_constructor != None
+    run('float32', [1, 1])
+
+def test_static_tensor_array_read():
+    def run(dtype, shape):
+        mod = relay.Module()
+        p = Prelude(mod)
+        from tvm.relay.prelude import StaticTensorArrayOps
+        static_tensor_array_ops = StaticTensorArrayOps(p, dtype, shape)
+        static_tensor_array_ops.register()
+
+
+        l = relay.var('l')
+        i = relay.var('i')
+        read_func = p.get_var_static('tensor_array_read', dtype, shape)
+        tensor_array = p.get_var_static('tensor_array', dtype, shape)
+        mod["main"] = relay.Function([l, i], read_func(tensor_array(l), i))
+        print(mod['main'])
+        expected = [0]
+        check_tensor_array(mod, expected, *(5, 1), dtype=dtype)
+    run('float32', [1, 1])
 
 def check_tensor_array(ta_mod, ref_res, *args, dtype="float32",
                        ta_ctx=tvm.cpu(), target="llvm", rtol=1e-5):

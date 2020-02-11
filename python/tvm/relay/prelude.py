@@ -24,6 +24,101 @@ from .adt import PatternConstructor, PatternVar, PatternWildcard
 from . import op
 from .module import Module
 
+class StaticTensorArrayOps(object):
+    """Contains tensor array related ops for static shape tensor array"""
+
+    def __init__(self, prelude, dtype, shape):
+        """Create tensor array ops registry"""
+        self.prelude = prelude
+        self.dtype = dtype
+        self.shape = shape
+
+    def get_name(self, canonical):
+        """Get name corresponding to the canonical name"""
+        shape_str = str(self.shape).replace('[', '').replace(']', '').replace(', ', '_')
+        if canonical == 'tensor_t':
+            return 'static_tensor_{}_{}_t'.format(self.dtype, shape_str)
+        return "{}_{}_{}".format(canonical, self.dtype, shape_str)
+
+    def get_var(self, canonical):
+        """Get var corresponding to the canonical name"""
+        name = self.get_name(canonical)
+        return getattr(self.prelude, name)
+
+    def define_tensor_adt(self):
+        """Defines the dynamic tensor ADT, which is the container for tensors
+        with variable shapes."""
+        tensor_type_name = self.get_name('tensor_t')
+        tensor_type_var = GlobalTypeVar(tensor_type_name)
+        setattr(self.prelude, tensor_type_name, tensor_type_var)
+        tensor_type = TensorType(self.shape, self.dtype)
+        tensor_constructor_name = self.get_name('tensor_constructor')
+
+        
+        tensor_nil_name = self.get_name('tensor_nil')
+        tensor_nil_case = Constructor(tensor_nil_name, [], tensor_type_var)
+        tensor_case = Constructor(tensor_constructor_name, [tensor_type], tensor_type_var)
+
+        setattr(self.prelude, tensor_nil_name, tensor_nil_case)
+        setattr(self.prelude, tensor_constructor_name, tensor_case)
+        self.prelude.mod[tensor_type_var] = TypeData(tensor_type_var, [], [tensor_nil_case, tensor_case])
+
+    def define_tensor_array(self):
+        """Defines a function to create a tensor array with size n.
+        tensor_array(n) : Tensor[(), int32] -> list[tensor_t]
+        """
+        tensor_array_constructor_name = self.get_name("tensor_array")
+        tensor_array_constructor_var = GlobalVar(tensor_array_constructor_name)
+        setattr(self.prelude, tensor_array_constructor_name, tensor_array_constructor_var)
+        tensor_nil_var = self.get_var('tensor_nil')
+        tensor_type_var = self.get_var('tensor_t')
+        n = Var("x", scalar_type('int32'))
+        body = If(equal(n, const(0)),
+                  self.prelude.nil(),
+                  self.prelude.cons(tensor_nil_var(),
+                                    tensor_array_constructor_var(subtract(n, const(1)))))
+        self.prelude.mod[tensor_array_constructor_var] = \
+            Function([n], body, self.prelude.l(tensor_type_var()), [])
+
+    def define_tensor_get_data(self):
+        """Defines a function to get a Tensor from static_tensor_t.
+        tensor_get_data(n) : static_tensor_t -> Tensor[self.shape, self.dtype]
+        """
+        tensor_get_data_name = self.get_var("tensor_get_data")
+        tensor_nil_var = self.get_var('tensor_nil')
+        tensor_type_var = self.get_var('tensor_t')
+        n = Var("x", scalar_type('int32'))
+        body = If(equal(n, const(0)),
+                  self.prelude.nil(),
+                  self.prelude.cons(tensor_nil_var(),
+                                    tensor_array_constructor_var(subtract(n, const(1)))))
+        self.prelude.mod[tensor_array_constructor_var] = \
+            Function([n], body, self.prelude.l(tensor_type_var()), [])
+
+
+    def define_tensor_array_read(self):
+        """Defines a function to get the head of a list. Assume the list has at least one
+        element.
+
+        tensor_array_read(ta, n) : list[static_tensor_t] -> Tensor[(), int32] -> Tensor[self.shape, self.dtype]
+        """
+        read_name = self.get_name("tensor_array_read")
+        read_var = GlobalVar(read_name)
+        setattr(self.prelude, read_name, read_var)
+        tensor_type_var = self.get_var('tensor_t')
+
+        tensor_array = Var("tensor_array", self.prelude.l(tensor_type_var()))
+        n = Var("x", scalar_type('int32'))
+        self.prelude.mod[read_var] =\
+            Function([tensor_array, n], self.prelude.nth(tensor_array, n), tensor_type_var(), [])
+
+
+    def register(self):
+        """Register all tensor array ops in Prelude"""
+        self.define_tensor_adt()
+        self.define_tensor_array()
+        self.define_tensor_array_read()
+
 class TensorArrayOps(object):
     """Contains tensor array related ops"""
 
@@ -651,6 +746,18 @@ class Prelude:
             mod = Module()
         self.mod = mod
         self.load_prelude()
+
+    def get_name_static(self, canonical, dtype, shape):
+        """Get name corresponding to the canonical name"""
+        if canonical == 'tensor_t':
+            return 'static_tensor_{}_{}_t'.format(dtype, shape)
+        return "{}_{}_{}".format(canonical, dtype, str(shape).replace('[', '').replace(']', '').replace(', ', '_'))
+
+    def get_var_static(self, canonical, dtype, shape):
+        """Get var corresponding to the canonical name"""
+        name = self.get_name_static(canonical, dtype, shape)
+        return getattr(self, name)
+
 
     def get_name(self, canonical, dtype):
         """Get name corresponding to the canonical name"""
