@@ -26,6 +26,7 @@
 #if defined(__linux__)
 #include <sys/stat.h>
 #endif
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cuda_runtime.h>
 #include <nvrtc.h>
 
@@ -143,7 +144,9 @@ runtime::Module BuildCUDA(IRModule mod, Target target) {
   }
   std::string fmt = "ptx";
   std::string ptx;
+  code = "#define CUDA_API_PER_THREAD_DEFAULT_STREAM \n\n" + code;
   if (const auto* f = Registry::Get("tvm_callback_cuda_compile")) {
+    std::cout << "code is \n" << code << std::endl;
     ptx = (*f)(code).operator std::string();
     // Dirty matching to check PTX vs cubin.
     // TODO(tqchen) more reliable checks

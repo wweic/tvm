@@ -18,6 +18,7 @@
  */
 
 #ifdef TF_TVMDSOOP_ENABLE_GPU
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cuda_runtime.h>
 #endif
 #include <dlpack/dlpack.h>

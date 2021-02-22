@@ -24,6 +24,7 @@
 #ifndef TVM_RUNTIME_CONTRIB_CUBLAS_CUBLAS_UTILS_H_
 #define TVM_RUNTIME_CONTRIB_CUBLAS_CUBLAS_UTILS_H_
 
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cublas_v2.h>
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>

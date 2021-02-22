@@ -21,6 +21,7 @@
  * \file cuda_device_api.cc
  * \brief GPU specific API
  */
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <dmlc/thread_local.h>
